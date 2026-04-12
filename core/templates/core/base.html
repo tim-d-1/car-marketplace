@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUTO.RIA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ria-red': '#db5c4c',
+                        'ria-bg': '#f3f4f6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-ria-bg text-gray-800 font-sans">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-2 text-2xl font-bold text-gray-800">
+                <i class="fa-solid fa-car text-ria-red"></i>
+                <span>AUTO.RIA<span class="text-sm font-normal text-gray-500"></span></span>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <a href="#" class="text-black-600 hidden md:block">Вхід в кабінет</a>
+                <button class="bg-ria-white hover:bg-gray-600 text-black font-semibold py-2 px-6 rounded-full border-2 border-black transition duration-200">
+                    <i class="fa-solid fa-plus mr-2"></i>Продати авто
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12 py-8">
+    </footer>
+
+</body>
+</html>
