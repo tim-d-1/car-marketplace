@@ -40,7 +40,7 @@ class Car(models.Model):
 
     @property
     def price_uah(self):
-        return self.price * 41  # Approximate exchange rate
+        return self.price * 41  # Approximate rate
 
     @property
     def mileage_info(self):
