@@ -8,18 +8,13 @@
 
 <script>
     async function handleAuthCallback() {
-        // Use the globally initialized client from base.html
         if (!window.supabaseClient) {
             console.error('Supabase client not initialized');
             return;
         }
-
-        // Wait for Supabase to detect the session from the URL fragment
         const { data: { session }, error } = await window.supabaseClient.auth.getSession()
-        
         if (session && session.user) {
-            // Success! We have a Supabase session. 
-            // Now tell Django to log this user in.
+
             const response = await fetch('{% url "auth_callback" %}', {
                 method: 'POST',
                 headers: {
@@ -28,12 +23,13 @@
                 },
                 body: JSON.stringify({
                     email: session.user.email,
-                    id: session.user.id
+                    id: session.user.id,
+                    full_name: session.user.user_metadata.full_name || session.user.user_metadata.name
                 })
             });
 
             if (response.ok) {
-                // Django has now set the session cookie!
+
                 window.location.href = '/';
             } else {
                 console.error('Django login failed');
@@ -45,7 +41,6 @@
         }
     }
 
-    // Run as soon as the page loads
     window.onload = handleAuthCallback;
 </script>
 {% endblock %}

@@ -120,8 +120,8 @@
 
         <div class="flex items-center space-x-6">
           {% if user.is_authenticated %}
-          <span class="text-gray-600 hidden md:block"
-            >Привіт, {{ user.username }}</span
+          <a href="{% url 'profile' %}" class="text-gray-600 hover:text-ria-red transition duration-200 hidden md:block"
+            >Привіт, {{ user.get_full_name|default:user.username }}</a
           >
           <a
             href="{% url 'logout' %}"
@@ -154,8 +154,6 @@
         const url = '{{ SUPABASE_URL }}';
         const key = '{{ SUPABASE_ANON_KEY }}';
 
-        // Initialize the client if it doesn't exist
-        // We use 'supabaseClient' to avoid clashing with the 'supabase' library object
         if (!window.supabaseClient) {
             window.supabaseClient = supabase.createClient(url, key);
         }
@@ -164,7 +162,10 @@
             const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.origin + '/auth/callback/' 
+                    redirectTo: window.location.origin + '/auth/callback/',
+                    queryParams: {
+                        prompt: 'select_account'
+                    }
                 }
             });
             if (error) console.error('Login error:', error.message);
