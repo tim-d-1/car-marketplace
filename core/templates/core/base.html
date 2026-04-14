@@ -147,5 +147,29 @@
     <main>{% block content %}{% endblock %}</main>
 
     <footer class="bg-gray-800 text-white mt-12 py-8"></footer>
+<!-- Supabase SDK & Auth Logic -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    (function() {
+        const url = '{{ SUPABASE_URL }}';
+        const key = '{{ SUPABASE_ANON_KEY }}';
+
+        // Initialize the client if it doesn't exist
+        // We use 'supabaseClient' to avoid clashing with the 'supabase' library object
+        if (!window.supabaseClient) {
+            window.supabaseClient = supabase.createClient(url, key);
+        }
+
+        window.loginWithGoogle = async function() {
+            const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/auth/callback/' 
+                }
+            });
+            if (error) console.error('Login error:', error.message);
+        };
+    })();
+</script>
   </body>
 </html>

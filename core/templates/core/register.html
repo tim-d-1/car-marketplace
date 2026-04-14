@@ -17,8 +17,24 @@
         </a>
       </p>
     </div>
-    <form class="mt-8 space-y-6" method="POST">
-      {% csrf_token %}
+    <div class="mt-8 space-y-6">
+        <button onclick="loginWithGoogle()" type="button" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 py-2 px-4 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+            Зареєструватися через Google
+        </button>
+
+        <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+                <span class="px-2 bg-white text-gray-500">або створіть акаунт</span>
+            </div>
+        </div>
+
+        <form class="space-y-6" method="POST">
+            {% csrf_token %}
+
       <div class="rounded-md shadow-sm space-y-4">
         {% for field in form %}
         <div>

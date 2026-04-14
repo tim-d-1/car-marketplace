@@ -265,8 +265,7 @@
             {{ car.get_transmission_display }}
           </div>
           <div class="footnote text-gray-700">
-            {{ car.get_fuel_type_display }}{% if car.engine_volume %}, {{
-            car.engine_volume }} л{% endif %}
+            {{ car.get_fuel_type_display }}{% if car.engine_volume %}, {{ car.engine_volume  }}l {% endif %}
           </div>
           <div class="footnote text-gray-700">{{ car.region }}</div>
         </div>
