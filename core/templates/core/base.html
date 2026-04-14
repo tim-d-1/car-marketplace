@@ -12,12 +12,94 @@
                 extend: {
                     colors: {
                         'ria-red': '#db5c4c',
-                        'ria-bg': '#f3f4f6'
+                        'ria-bg': '#f3f4f6',
+                        'ria-blue': '#2563eb'
                     }
                 }
             }
         }
     </script>
+    <style>
+        :root {
+            --contrastPrimary: #2d3748;
+            --contrastSecondary: #718096;
+            --green: #22c55e;
+            --inverse: #ffffff;
+            --ria-red: #db5c4c;
+        }
+        .wrapper-elevation {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .shadow-mediumHover:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .round-medium {
+            border-radius: 0.75rem;
+        }
+        .common-badge.contrast {
+            background-color: #0076cc;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .footnote {
+            font-size: 13px;
+        }
+        .titleS {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .titleM {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .select-input:checked + .select-label {
+            background-color: #2d3748;
+            color: white;
+            border-color: #2d3748;
+        }
+        .select-label {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ria-select-container {
+            position: relative;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        .ria-select-container:focus-within {
+            border-color: #db5c4c;
+            box-shadow: 0 0 0 2px rgba(219, 92, 76, 0.1);
+        }
+        .ria-select-label {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.75rem;
+            font-size: 0.75rem;
+            color: #718096;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .ria-select {
+            width: 100%;
+            padding: 1.5rem 0.75rem 0.5rem 0.75rem;
+            appearance: none;
+            background: transparent;
+            outline: none;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body class="bg-ria-bg text-gray-800 font-sans">
 

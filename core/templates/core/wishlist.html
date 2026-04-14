@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Мій блокнот</h1>
+        <p class="text-gray-500">{{ wishlist_items.count }} збережених авто</p>
+    </div>
+
+    {% if wishlist_items %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for item in wishlist_items %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" id="wishlist-item-{{ item.car.id }}">
+            <a href="{% url 'car_detail' item.car.id %}">
+                <div class="relative h-48">
+                    <img src="{{ item.car.image|default:'https://via.placeholder.com/400x300' }}" class="w-full h-full object-cover" alt="{{ item.car.brand }}">
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-bold text-blue-600 leading-tight mb-1">
+                        {{ item.car.brand }} {{ item.car.model }} {{ item.car.year }}
+                    </h3>
+                    <div class="text-2xl font-black text-green-600 mb-2">{{ item.car.price }} $</div>
+                    
+                    <button onclick="toggleWishlist(event, {{ item.car.id }}, true)" class="w-full mt-4 text-red-500 border border-red-500 hover:bg-red-50 py-2 rounded-lg font-semibold transition">
+                        Видалити з блокнота
+                    </button>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+        <i class="fa-solid fa-heart-crack text-6xl text-gray-200 mb-4"></i>
+        <h2 class="text-2xl font-bold text-gray-400 mb-2">У вашому блокноті порожньо</h2>
+        <p class="text-gray-500 mb-8">Зберігайте авто, що сподобалися, щоб не загубити їх.</p>
+        <a href="{% url 'home' %}" class="bg-ria-red text-white px-8 py-3 rounded-xl font-bold hover:bg-red-700 transition">
+            Перейти до пошуку
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+async function toggleWishlist(event, carId, isRemoveView = false) {
+    if (event) event.preventDefault();
+    
+    try {
+        const response = await fetch(`/wishlist/toggle/${carId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'removed' && isRemoveView) {
+            const element = document.getElementById(`wishlist-item-${carId}`);
+            element.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                element.remove();
+                if (document.querySelectorAll('[id^="wishlist-item-"]').length === 0) {
+                    location.reload(); // Show the empty state
+                }
+            }, 300);
+        }
+    } catch (error) {
+        console.error('Error toggling wishlist:', error);
+    }
+}
+</script>
+{% endblock %}
