@@ -33,9 +33,49 @@
           >
             Написати продавцю
           </button>
+          <button
+            onclick="toggleDetailWishlist(event, {{ car.id }})"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center"
+            title="Додати в wishlist"
+          >
+            {% if in_wishlist %}
+            <i id="wishlist-icon-{{ car.id }}" class="fa-solid fa-heart text-ria-red text-2xl"></i>
+            {% else %}
+            <i id="wishlist-icon-{{ car.id }}" class="fa-regular fa-heart text-gray-700 text-2xl"></i>
+            {% endif %}
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  async function toggleDetailWishlist(event, carId) {
+    if (event) event.preventDefault();
+
+    try {
+      const response = await fetch(`/wishlist/toggle/${carId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      const icon = document.getElementById(`wishlist-icon-${carId}`);
+
+      if (data.status === "added") {
+        icon.classList.remove("fa-regular", "text-gray-700");
+        icon.classList.add("fa-solid", "text-ria-red");
+      } else if (data.status === "removed") {
+        icon.classList.remove("fa-solid", "text-ria-red");
+        icon.classList.add("fa-regular", "text-gray-700");
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    }
+  }
+</script>
 {% endblock %}

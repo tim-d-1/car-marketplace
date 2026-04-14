@@ -217,24 +217,15 @@
 
         <div class="absolute top-2 right-2 z-10">
           <button
-            class="bg-white/80 hover:bg-white p-2 rounded-full shadow transition"
+            class="bg-white/80 hover:bg-white p-2 rounded-full shadow transition w-10 h-10"
             title="Додати в wishlist"
+            onclick="toggleIndexWishlist(event, {{ car.id }})"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              class="text-gray-700"
-            >
-              <path
-                fill-rule="evenodd"
-                clip-rule="evenodd"
-                d="M12.0001 3.87654C9.48365 1.37442 5.40384 1.37449 2.88747 3.87675C0.371098 6.379 0.370749 10.4362 2.88699 12.9385L11.295 21.2989C11.6851 21.6867 12.3151 21.6867 12.7052 21.2989L21.1129 12.9383C23.6291 10.4359 23.629 6.37905 21.1127 3.87682C18.5963 1.37458 14.5166 1.37449 12.0001 3.87654ZM19.7026 11.5202C19.7027 11.5201 19.7027 11.5201 19.7027 11.5201C21.4325 9.79968 21.4324 7.01529 19.7024 5.295C17.9662 3.56849 15.1466 3.56843 13.4103 5.29481L12.0001 6.6969L10.5899 5.29479C8.85362 3.56836 6.03397 3.5684 4.2977 5.29493C2.56759 7.01534 2.56745 9.80004 4.29717 11.5203C4.29721 11.5204 4.29724 11.5204 4.29728 11.5204L12.0001 19.1795L19.7026 11.5202Z"
-                fill="currentColor"
-              ></path>
-            </svg>
+            {% if car.id in wishlist_car_ids %}
+            <i id="wishlist-icon-{{ car.id }}" class="fa-solid fa-heart text-ria-red text-xl"></i>
+            {% else %}
+            <i id="wishlist-icon-{{ car.id }}" class="fa-regular fa-heart text-gray-700 text-xl"></i>
+            {% endif %}
           </button>
         </div>
 
@@ -265,8 +256,8 @@
             {{ car.get_transmission_display }}
           </div>
           <div class="footnote text-gray-700">
-            {{ car.get_fuel_type_display }}{% if car.engine_volume %}, {{
-            car.engine_volume }} {% endif %}
+            {{ car.get_fuel_type_display }}{% if car.engine_volume %}, 
+            {{ car.engine_volume }} {% endif %}
           </div>
           <div class="footnote text-gray-700">{{ car.region }}</div>
         </div>
@@ -281,4 +272,32 @@
     {% endfor %}
   </div>
 </section>
+<script>
+  async function toggleIndexWishlist(event, carId) {
+    if (event) event.preventDefault();
+
+    try {
+      const response = await fetch(`/wishlist/toggle/${carId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      const icon = document.getElementById(`wishlist-icon-${carId}`);
+
+      if (data.status === "added") {
+        icon.classList.remove("fa-regular", "text-gray-700");
+        icon.classList.add("fa-solid", "text-ria-red");
+      } else if (data.status === "removed") {
+        icon.classList.remove("fa-solid", "text-ria-red");
+        icon.classList.add("fa-regular", "text-gray-700");
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    }
+  }
+</script>
 {% endblock %}

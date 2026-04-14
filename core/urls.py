@@ -9,4 +9,6 @@ urlpatterns = [
     path('auth/callback/', views.auth_callback_view, name='auth_callback'),
     path('profile/', views.profile_view, name='profile'),
     path('car/<int:car_id>/', views.car_detail, name='car_detail'),
+    path('wishlist/', views.wishlist_view, name='wishlist'),
+    path('wishlist/toggle/<int:car_id>/', views.toggle_wishlist, name='toggle_wishlist'),
 ]

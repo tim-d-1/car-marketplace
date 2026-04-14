@@ -109,25 +109,39 @@
       <div
         class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16"
       >
-        <div
+        <a
+          href="{% url 'home' %}"
           class="flex items-center space-x-2 text-2xl font-bold text-gray-800"
         >
           <i class="fa-solid fa-car text-ria-red"></i>
           <span
             >AUTO.RIA<span class="text-sm font-normal text-gray-500"></span
           ></span>
-        </div>
+        </a>
 
         <div class="flex items-center space-x-6">
           {% if user.is_authenticated %}
-          <a href="{% url 'profile' %}" class="text-gray-600 hover:text-ria-red transition duration-200 hidden md:block"
-            >Привіт, {{ user.get_full_name|default:user.username }}</a
+          <a
+            href="{% url 'profile' %}"
+            class="text-gray-600 hover:text-ria-red transition duration-200"
+            title="Мій Профіль"
           >
+            <i class="fa-regular fa-user text-xl"></i>
+          </a>
+          <a
+            href="{% url 'wishlist' %}"
+            class="text-gray-600 hover:text-ria-red transition duration-200"
+            title="Обране"
+          >
+            <i class="fa-regular fa-heart text-xl"></i>
+          </a>
           <a
             href="{% url 'logout' %}"
             class="text-gray-600 hover:text-ria-red transition duration-200"
-            >Вихід</a
+            title="Вихід"
           >
+            <i class="fa-solid fa-right-from-bracket text-xl"></i>
+          </a>
           {% else %}
           <a
             href="{% url 'login' %}"

@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django import forms
-from .models import Car, Profile
+from .models import Car, Profile, Wishlist
 
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, label="Ім'я")
@@ -94,9 +94,14 @@ def home(request):
     models = Car.objects.values_list('model', flat=True).distinct().order_by('model')
     regions = Car.objects.values_list('region', flat=True).distinct().order_by('region')
 
+    wishlist_car_ids = []
+    if request.user.is_authenticated:
+        wishlist_car_ids = list(Wishlist.objects.filter(user=request.user).values_list('car_id', flat=True))
+
     context = {
         'cars': cars, 'brands': brands, 'models': models, 'regions': regions,
         'query_condition': condition, 'query_brand': brand, 'query_model': model, 'query_region': region,
+        'wishlist_car_ids': wishlist_car_ids,
     }
     return render(request, 'core/index.html', context)
 
@@ -133,4 +138,23 @@ def logout_view(request):
 
 def car_detail(request, car_id):
     car = get_object_or_404(Car, id=car_id)
-    return render(request, 'core/car_detail.html', {'car': car})
+    in_wishlist = False
+    if request.user.is_authenticated:
+        in_wishlist = Wishlist.objects.filter(user=request.user, car=car).exists()
+    return render(request, 'core/car_detail.html', {'car': car, 'in_wishlist': in_wishlist})
+
+@login_required
+def wishlist_view(request):
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('car')
+    return render(request, 'core/wishlist.html', {'wishlist_items': wishlist_items})
+
+@login_required
+def toggle_wishlist(request, car_id):
+    if request.method == 'POST':
+        car = get_object_or_404(Car, id=car_id)
+        wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, car=car)
+        if not created:
+            wishlist_item.delete()
+            return JsonResponse({'status': 'removed'})
+        return JsonResponse({'status': 'added'})
+    return JsonResponse({'status': 'error'}, status=400)
