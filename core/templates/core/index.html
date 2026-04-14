@@ -48,17 +48,18 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     {% for car in cars %}
-    <div class="bg-white rounded-lg shadow ...">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <a href="{% url 'car_detail' car.id %}">
         <img
           src="{{ car.image|default:'https://via.placeholder.com/400x300' }}"
-          alt="{{ car.brand }}"
+          alt="{{ car.brand }} {{ car.model }}"
+          class="w-full h-48 object-cover"
         />
         <div class="p-4">
-          <h3 class="text-lg font-bold text-blue-600">
+          <h3 class="text-lg font-bold text-blue-600 hover:underline">
             {{ car.brand }} {{ car.model }} {{ car.year }}
           </h3>
-          <div class="text-2xl font-bold text-green-600">{{ car.price }} $</div>
+          <div class="text-2xl font-bold text-green-600 mt-2">{{ car.price }} $</div>
         </div>
       </a>
     </div>

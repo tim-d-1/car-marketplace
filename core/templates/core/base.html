@@ -29,8 +29,13 @@
             </div>
             
             <div class="flex items-center space-x-6">
-                <a href="#" class="text-black-600 hidden md:block">Вхід в кабінет</a>
-                <button class="bg-ria-white hover:bg-gray-600 text-black font-semibold py-2 px-6 rounded-full border-2 border-black transition duration-200">
+                {% if user.is_authenticated %}
+                    <span class="text-gray-600 hidden md:block">Привіт, {{ user.username }}</span>
+                    <a href="{% url 'logout' %}" class="text-gray-600 hover:text-ria-red transition duration-200">Вихід</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-gray-600 hover:text-ria-red transition duration-200 hidden md:block">Вхід в кабінет</a>
+                {% endif %}
+                <button class="bg-white hover:bg-gray-100 text-black font-semibold py-2 px-6 rounded-full border-2 border-black transition duration-200">
                     <i class="fa-solid fa-plus mr-2"></i>Продати авто
                 </button>
             </div>
