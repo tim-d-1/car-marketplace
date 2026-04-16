@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% block content %}
+  <div class="bg-gray-100 min-h-screen pb-12">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row gap-8">
+        <aside class="w-full md:w-1/3 lg:w-1/4 space-y-6">
+          <div class="wrapper-elevation round-medium p-6 flex flex-col items-center text-center">
+            <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-white shadow-sm">
+              {% if user.profile.avatar %}
+                <img src="{{ user.profile.avatar }}"
+                     alt="Avatar"
+                     class="w-full h-full object-cover">
+              {% else %}
+                <i class="fa-solid fa-user text-4xl text-gray-400"></i>
+              {% endif %}
+            </div>
+            <h2 class="titleS text-gray-900">{{ user.username }}</h2>
+            <p class="footnote text-gray-500 mt-1">{{ user.email }}</p>
+            <p class="footnote text-gray-500">{{ user.profile.phone|default:"Телефон не вказано" }}</p>
+            <div class="mt-4 pt-4 border-t border-gray-100 w-full space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-gray-400">ID:</span>
+                <span class="text-gray-700 font-bold">#{{ user.id }}</span>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-gray-400">На сайті з:</span>
+                <span class="text-gray-700 font-bold">{{ user.date_joined|date:"F Y"|lower }}</span>
+              </div>
+            </div>
+          </div>
+          <nav class="wrapper-elevation round-medium overflow-hidden">
+            <ul class="divide-y divide-gray-100">
+              <li>
+                <a href="{% url 'profile' %}"
+                   class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'profile' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
+                  <i class="fa-solid fa-user-gear"></i>
+                  Налаштування
+                </a>
+              </li>
+              <li>
+                <a href="{% url 'my_ads' %}"
+                   class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'my_ads' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
+                  <i class="fa-solid fa-car-side"></i>
+                  Мої оголошення
+                </a>
+              </li>
+              <li>
+                <a href="{% url 'purchase_history' %}"
+                   class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'purchase_history' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
+                  <i class="fa-solid fa-receipt"></i>
+                  Історія покупок
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                   class="flex items-center gap-3 px-6 py-4 text-gray-700 hover:bg-gray-50 transition">
+                  <i class="fa-solid fa-bell"></i>
+                  Сповіщення
+                </a>
+              </li>
+              <li>
+                <a href="{% url 'wishlist' %}"
+                   class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'wishlist' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
+                  <i class="fa-solid fa-heart text-ria-red"></i>
+                  Обране
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                   class="flex items-center gap-3 px-6 py-4 text-gray-700 hover:bg-gray-50 transition">
+                  <i class="fa-solid fa-comment-dots"></i>
+                  Повідомлення
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </aside>
+        <main class="w-full md:w-2/3 lg:w-3/4">
+          <div class="wrapper-elevation round-medium p-8">
+            {% block profile_content %}{% endblock %}
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+{% endblock %}

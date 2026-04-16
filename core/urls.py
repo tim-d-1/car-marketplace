@@ -8,9 +8,12 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("auth/callback/", views.auth_callback_view, name="auth_callback"),
     path("profile/", views.profile_view, name="profile"),
+    path("profile/my-ads/", views.my_ads, name="my_ads"),
+    path("profile/purchases/", views.purchase_history, name="purchase_history"),
     path("car/<int:car_id>/", views.car_detail, name="car_detail"),
-    path("wishlist/", views.wishlist_view, name="wishlist"),
-    path(
+    path("car/<int:car_id>/checkout/", views.checkout_view, name="checkout"),
+    path("api/payment-success/", views.payment_success_api, name="payment_success_api"),
+    path("wishlist/", views.wishlist_view, name="wishlist"),    path(
         "wishlist/toggle/<int:car_id>/", views.toggle_wishlist, name="toggle_wishlist"
     ),
     path("api/filter-options/", views.get_filter_options, name="get_filter_options"),

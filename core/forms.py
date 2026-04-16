@@ -1,8 +1,38 @@
 from django import forms
-from .models import Car, VehicleMake, VehicleModel, VehicleType, Region
+from .models import Car, VehicleMake, VehicleModel, VehicleType, Region, User
+from django.contrib.auth.forms import UserCreationForm
+
+
+class UserProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=20, label="Номер телефону", required=False)
+    avatar = forms.ImageField(label="Фото профілю", required=False)
+    wallet_address = forms.CharField(max_length=42, label="MetaMask Гаманець", required=False)
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "username", "email"]
+        labels = {
+            "first_name": "Ім'я",
+            "last_name": "Прізвище",
+            "username": "Ім'я користувача (ID)",
+            "email": "Електронна пошта",
+        }
+
+
+class UserRegistrationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=30, required=True, label="Ім'я")
+    last_name = forms.CharField(
+        max_length=30, required=False, label="Прізвище (необов'язково)"
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ("first_name", "last_name", "email")
 
 
 class CarForm(forms.ModelForm):
+    image = forms.ImageField(label="Фото авто", required=False)
+
     vehicle_type = forms.ModelChoiceField(
         queryset=VehicleType.objects.all().order_by("name"),
         label="Тип транспорту",
@@ -69,7 +99,6 @@ class CarForm(forms.ModelForm):
             "year",
             "price",
             "description",
-            "image",
             "condition",
             "region",
             "mileage",

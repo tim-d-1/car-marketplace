@@ -1,13 +1,16 @@
 import json
+import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django import forms
+
+from core.forms import CarForm, UserProfileForm, UserRegistrationForm
+from .supabase_client import upload_image
 from .models import (
     Car,
     Profile,
@@ -17,47 +20,34 @@ from .models import (
     Region,
     VehicleType,
 )
-from .forms import CarForm
-
-
-class UserRegistrationForm(UserCreationForm):
-    first_name = forms.CharField(max_length=30, required=True, label="Ім'я")
-    last_name = forms.CharField(
-        max_length=30, required=False, label="Прізвище (необов'язково)"
-    )
-
-    class Meta(UserCreationForm.Meta):
-        model = User
-        fields = UserCreationForm.Meta.fields + ("first_name", "last_name", "email")
-
-
-class UserProfileForm(forms.ModelForm):
-    phone = forms.CharField(max_length=20, label="Номер телефону", required=False)
-
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name", "username", "email"]
-        labels = {
-            "first_name": "Ім'я",
-            "last_name": "Прізвище",
-            "username": "Ім'я користувача (ID)",
-            "email": "Електронна пошта",
-        }
 
 
 @login_required
 def profile_view(request):
     if request.method == "POST":
-        form = UserProfileForm(request.POST, instance=request.user)
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             user = form.save()
             profile = user.profile
             profile.phone = form.cleaned_data.get("phone")
+            profile.wallet_address = form.cleaned_data.get("wallet_address")
+
+            avatar_file = request.FILES.get("avatar")
+            if avatar_file:
+                avatar_url = upload_image(
+                    avatar_file, bucket="avatars", folder=f"user_{user.id}"
+                )
+                if avatar_url:
+                    profile.avatar = avatar_url
+
             profile.save()
             messages.success(request, "Ваш профіль успішно оновлено!")
             return redirect("profile")
     else:
-        initial_data = {"phone": request.user.profile.phone}
+        initial_data = {
+            "phone": request.user.profile.phone,
+            "wallet_address": request.user.profile.wallet_address,
+        }
         form = UserProfileForm(instance=request.user, initial=initial_data)
 
     return render(request, "core/profile.html", {"form": form})
@@ -177,7 +167,6 @@ def get_filter_options(request):
         )
 
     if make_id:
-
         if make_id == "all":
             types = VehicleType.objects.all()
         else:
@@ -194,20 +183,30 @@ def get_filter_options(request):
         if type_id and type_id != "all":
             models_qs = models_qs.filter(vehicle_type_id=type_id)
         response_data["models"] = list(
-            models_qs.order_by("model_name").values("model_id", "model_name")
+            models_qs.order_by("model_name").values(
+                "model_id", "model_name", "vehicle_type_id"
+            )
         )
 
     return JsonResponse(response_data)
 
 
+@login_required
 def add_auto(request):
     if request.method == "POST":
         form = CarForm(request.POST, request.FILES)
         if form.is_valid():
             car = form.save(commit=False)
 
+            image_file = request.FILES.get("image")
+            if image_file:
+                image_url = upload_image(image_file, bucket="cars", folder="listings")
+                if image_url:
+                    car.image = image_url
+
             new_phone = form.cleaned_data.get("phone")
             if request.user.is_authenticated:
+                car.owner = request.user
                 if new_phone and not request.user.profile.phone:
                     profile = request.user.profile
                     profile.phone = new_phone
@@ -218,13 +217,76 @@ def add_auto(request):
             return redirect("home")
     else:
         initial = {}
-
         if request.user.is_authenticated and request.user.profile.phone:
             initial["phone"] = request.user.profile.phone
-
         form = CarForm(initial=initial)
 
     return render(request, "core/add_auto.html", {"form": form})
+
+
+@login_required
+def my_ads(request):
+    cars = Car.objects.filter(owner=request.user).select_related(
+        "brand", "model", "region"
+    )
+    return render(request, "core/my_ads.html", {"cars": cars})
+
+
+@login_required
+def checkout_view(request, car_id):
+    car = get_object_or_404(Car, id=car_id)
+    if car.owner == request.user:
+        messages.warning(request, "Ви не можете купити власне авто.")
+        return redirect("car_detail", car_id=car.id)
+
+    try:
+        response = requests.get(
+            "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+            timeout=5,
+        )
+        data = response.json()
+        eth_usd_rate = data["ethereum"]["usd"]
+    except Exception as e:
+        print(f"Error fetching ETH price: {e}")
+        eth_usd_rate = 3200.0
+
+    eth_price = car.price / eth_usd_rate
+    context = {
+        "car": car,
+        "eth_price_str": "{:.6f}".format(eth_price),
+        "eth_price": round(eth_price, 6),
+        "seller_wallet": car.owner.profile.wallet_address if car.owner else None,
+    }
+    return render(request, "core/checkout.html", context)
+
+
+@login_required
+def payment_success_api(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        car_id = data.get("car_id")
+        tx_hash = data.get("tx_hash")
+        amount_eth = data.get("amount_eth")
+
+        car = get_object_or_404(Car, id=car_id)
+        from .models import Purchase
+
+        purchase = Purchase.objects.create(
+            car=car,
+            buyer=request.user,
+            seller=car.owner,
+            amount_eth=amount_eth,
+            transaction_hash=tx_hash,
+            status="completed",  # In a real app, we'd verify on-chain
+        )
+        return JsonResponse({"status": "success", "purchase_id": purchase.id})
+    return JsonResponse({"status": "error"}, status=400)
+
+
+@login_required
+def purchase_history(request):
+    purchases = request.user.purchases.all().select_related("car", "car__brand", "car__model", "seller")
+    return render(request, "core/purchase_history.html", {"purchases": purchases})
 
 
 def login_view(request):

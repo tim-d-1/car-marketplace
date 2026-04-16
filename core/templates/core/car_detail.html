@@ -19,6 +19,12 @@
             <h2 class="text-lg font-semibold text-gray-700 mb-2">Опис:</h2>
             <p class="text-gray-600 leading-relaxed">{{ car.description }}</p>
           </div>
+          <div class="mb-6">
+            <a href="{% url 'checkout' car.id %}" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-xl transition shadow-lg flex items-center justify-center gap-3 text-lg">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Mirror.svg" class="w-6 h-6" alt="MetaMask">
+                Купити через MetaMask
+            </a>
+          </div>
           <div class="flex space-x-4">
             <button class="flex-1 bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
               Показати телефон

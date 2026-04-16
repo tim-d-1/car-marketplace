@@ -1,0 +1,62 @@
+{% extends 'core/profile_base.html' %}
+{% block profile_content %}
+  <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+    <h1 class="text-2xl font-bold text-gray-900">Мої оголошення</h1>
+    <a href="{% url 'add_auto' %}"
+       class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-md">
+      + Додати оголошення
+    </a>
+  </div>
+  {% if cars %}
+    <div class="space-y-6">
+      {% for car in cars %}
+        <div class="flex flex-col sm:flex-row gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white relative">
+          <div class="w-full sm:w-48 h-32 flex-shrink-0">
+            {% if car.image %}
+              <img src="{{ car.image }}"
+                   alt="{{ car.brand.make_name }} {{ car.model.model_name }}"
+                   class="w-full h-full object-cover rounded-lg">
+            {% else %}
+              <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                <i class="fa-solid fa-camera text-3xl text-gray-300"></i>
+              </div>
+            {% endif %}
+          </div>
+          <div class="flex-grow">
+            <div class="flex justify-between items-start">
+              <h3 class="text-xl font-bold text-blue-700">{{ car.brand.make_name }} {{ car.model.model_name }} {{ car.year }}</h3>
+              <div class="text-xl font-bold text-ria-green">${{ car.price }}</div>
+            </div>
+            <div class="mt-2 text-sm text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+              <span><i class="fa-solid fa-gauge-high mr-1"></i>{{ car.mileage_info }}</span>
+              <span><i class="fa-solid fa-location-dot mr-1"></i>{{ car.region.name }}</span>
+              <span><i class="fa-solid fa-gas-pump mr-1"></i>{{ car.get_fuel_type_display }}</span>
+            </div>
+            <div class="mt-4 flex gap-3">
+              <a href="{% url 'car_detail' car.id %}"
+                 class="text-sm font-bold text-blue-600 hover:underline">Переглянути</a>
+              <span class="text-gray-300">|</span>
+              <a href="#"
+                 class="text-sm font-bold text-gray-500 hover:text-gray-700 transition">Редагувати</a>
+              <span class="text-gray-300">|</span>
+              <a href="#"
+                 class="text-sm font-bold text-red-500 hover:text-red-700 transition">Видалити</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-car-side text-4xl text-gray-300"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">У вас ще немає оголошень</h2>
+      <p class="text-gray-500 mb-8">Створіть своє перше оголошення, щоб почати продаж.</p>
+      <a href="{% url 'add_auto' %}"
+         class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-md">
+        Додати оголошення
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}
