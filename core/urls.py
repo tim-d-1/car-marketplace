@@ -11,4 +11,5 @@ urlpatterns = [
     path('car/<int:car_id>/', views.car_detail, name='car_detail'),
     path('wishlist/', views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:car_id>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('api/models/', views.get_models, name='get_models'),
 ]

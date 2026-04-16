@@ -6,8 +6,9 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django import forms
-from .models import Car, Profile, Wishlist
+from .models import Car, Profile, Wishlist, VehicleMake, VehicleModel, Region
 
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, label="Ім'я")
@@ -52,7 +53,7 @@ def auth_callback_view(request):
         try:
             data = json.loads(request.body)
             email = data.get('email')
-            full_name = data.get('full_name', '') # Get name from JS
+            full_name = data.get('full_name', '')
             
             user, created = User.objects.get_or_create(username=email, email=email)
             
@@ -75,35 +76,59 @@ def auth_callback_view(request):
     return render(request, 'core/auth_callback.html')
 
 def home(request):
-    cars = Car.objects.all()
+    cars = Car.objects.all().select_related('brand', 'model', 'region')
     condition = request.GET.get('condition')
-    brand = request.GET.get('brand')
-    model = request.GET.get('model')
-    region = request.GET.get('region')
+    brand_id = request.GET.get('brand')
+    model_id = request.GET.get('model')
+    region_id = request.GET.get('region')
 
     if condition and condition != 'all':
         cars = cars.filter(condition=condition)
-    if brand and brand != 'all':
-        cars = cars.filter(brand=brand)
-    if model and model != 'all':
-        cars = cars.filter(model=model)
-    if region and region != 'all':
-        cars = cars.filter(region=region)
+    if brand_id and brand_id != 'all':
+        cars = cars.filter(brand_id=brand_id)
+    if model_id and model_id != 'all':
+        cars = cars.filter(model_id=model_id)
+    if region_id and region_id != 'all':
+        cars = cars.filter(region_id=region_id)
 
-    brands = Car.objects.values_list('brand', flat=True).distinct().order_by('brand')
-    models = Car.objects.values_list('model', flat=True).distinct().order_by('model')
-    regions = Car.objects.values_list('region', flat=True).distinct().order_by('region')
+    # Caching filtering options
+    brands = cache.get('vehicle_brands')
+    if not brands:
+        brands = list(VehicleMake.objects.all().order_by('make_name'))
+        cache.set('vehicle_brands', brands, 3600) # Cache for 1 hour
 
+    regions = cache.get('ukraine_regions')
+    if not regions:
+        regions = list(Region.objects.all().order_by('name'))
+        cache.set('ukraine_regions', regions, 3600)
+
+    models = VehicleModel.objects.none()
+    if brand_id and brand_id != 'all':
+        models = VehicleModel.objects.filter(make_id=brand_id).order_by('model_name')
+        
     wishlist_car_ids = []
     if request.user.is_authenticated:
         wishlist_car_ids = list(Wishlist.objects.filter(user=request.user).values_list('car_id', flat=True))
 
     context = {
-        'cars': cars, 'brands': brands, 'models': models, 'regions': regions,
-        'query_condition': condition, 'query_brand': brand, 'query_model': model, 'query_region': region,
+        'cars': cars, 
+        'brands': brands, 
+        'models': models, 
+        'regions': regions,
+        'query_condition': condition, 
+        'query_brand': brand_id, 
+        'query_model': model_id, 
+        'query_region': region_id,
         'wishlist_car_ids': wishlist_car_ids,
     }
     return render(request, 'core/index.html', context)
+
+def get_models(request):
+    make_id = request.GET.get('make_id')
+    if make_id and make_id != 'all':
+        models = VehicleModel.objects.filter(make_id=make_id).order_by('model_name').values('model_id', 'model_name')
+        return JsonResponse(list(models), safe=False)
+    return JsonResponse([], safe=False)
 
 def login_view(request):
     if request.method == 'POST':
@@ -122,14 +147,14 @@ def login_view(request):
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST) # Use custom form
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('home')
         messages.error(request, "Помилка при реєстрації. Будь ласка, перевірте дані.")
     else:
-        form = UserRegistrationForm() # Use custom form
+        form = UserRegistrationForm()
     return render(request, 'core/register.html', {'form': form})
 
 def logout_view(request):
@@ -145,7 +170,7 @@ def car_detail(request, car_id):
 
 @login_required
 def wishlist_view(request):
-    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('car')
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('car', 'car__brand', 'car__model')
     return render(request, 'core/wishlist.html', {'wishlist_items': wishlist_items})
 
 @login_required

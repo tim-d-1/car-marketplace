@@ -4,6 +4,29 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+class VehicleMake(models.Model):
+    make_id = models.IntegerField(primary_key=True)
+    make_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.make_name
+
+class VehicleModel(models.Model):
+    model_id = models.IntegerField(primary_key=True)
+    make = models.ForeignKey(VehicleMake, on_delete=models.CASCADE, related_name='models')
+    model_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.model_name
+
+class Region(models.Model):
+    region_id = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=10)
+
+    def __str__(self):
+        return self.name
+
 class Car(models.Model):
     CONDITION_CHOICES = [
         ('new', 'Нові'),
@@ -23,14 +46,14 @@ class Car(models.Model):
         ('gas', 'Газ / Бензин'),
     ]
 
-    brand = models.CharField(max_length=100)
-    model = models.CharField(max_length=100)
+    brand = models.ForeignKey(VehicleMake, on_delete=models.PROTECT)
+    model = models.ForeignKey(VehicleModel, on_delete=models.PROTECT)
     year = models.IntegerField()
     price = models.IntegerField()  # USD
     description = models.TextField()
     image = models.URLField(blank=True)
     condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='used')
-    region = models.CharField(max_length=100, default='Київ')
+    region = models.ForeignKey(Region, on_delete=models.PROTECT, null=True, blank=True)
     
     mileage = models.IntegerField(default=0)
     transmission = models.CharField(max_length=20, choices=TRANSMISSION_CHOICES, default='manual')
@@ -39,7 +62,7 @@ class Car(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.brand} {self.model}"
+        return f"{self.brand.make_name} {self.model.model_name}"
 
     @property
     def price_uah(self):
