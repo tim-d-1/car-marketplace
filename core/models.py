@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+
 class VehicleMake(models.Model):
     make_id = models.IntegerField(primary_key=True)
     make_name = models.CharField(max_length=255)
@@ -11,13 +12,27 @@ class VehicleMake(models.Model):
     def __str__(self):
         return self.make_name
 
+
+class VehicleType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class VehicleModel(models.Model):
     model_id = models.IntegerField(primary_key=True)
-    make = models.ForeignKey(VehicleMake, on_delete=models.CASCADE, related_name='models')
+    make = models.ForeignKey(
+        VehicleMake, on_delete=models.CASCADE, related_name="models"
+    )
     model_name = models.CharField(max_length=255)
+    vehicle_type = models.ForeignKey(
+        VehicleType, on_delete=models.SET_NULL, null=True, related_name="models"
+    )
 
     def __str__(self):
         return self.model_name
+
 
 class Region(models.Model):
     region_id = models.IntegerField(primary_key=True)
@@ -27,38 +42,45 @@ class Region(models.Model):
     def __str__(self):
         return self.name
 
+
 class Car(models.Model):
     CONDITION_CHOICES = [
-        ('new', 'Нові'),
-        ('used', 'Вживані'),
+        ("new", "Нові"),
+        ("used", "Вживані"),
     ]
     TRANSMISSION_CHOICES = [
-        ('manual', 'Ручна / Механіка'),
-        ('automatic', 'Автомат'),
-        ('robot', 'Робот'),
-        ('variator', 'Варіатор'),
+        ("manual", "Ручна / Механіка"),
+        ("automatic", "Автомат"),
+        ("robot", "Робот"),
+        ("variator", "Варіатор"),
     ]
     FUEL_CHOICES = [
-        ('petrol', 'Бензин'),
-        ('diesel', 'Дизель'),
-        ('electric', 'Електро'),
-        ('hybrid', 'Гібрид'),
-        ('gas', 'Газ / Бензин'),
+        ("petrol", "Бензин"),
+        ("diesel", "Дизель"),
+        ("electric", "Електро"),
+        ("hybrid", "Гібрид"),
+        ("gas", "Газ / Бензин"),
     ]
 
     brand = models.ForeignKey(VehicleMake, on_delete=models.PROTECT)
     model = models.ForeignKey(VehicleModel, on_delete=models.PROTECT)
     year = models.IntegerField()
-    price = models.IntegerField()  # USD
+    price = models.IntegerField()
     description = models.TextField()
-    image = models.URLField(blank=True)
-    condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default='used')
+    image = models.ImageField(upload_to="cars/", blank=True, null=True)
+    condition = models.CharField(
+        max_length=10, choices=CONDITION_CHOICES, default="used"
+    )
     region = models.ForeignKey(Region, on_delete=models.PROTECT, null=True, blank=True)
-    
+
     mileage = models.IntegerField(default=0)
-    transmission = models.CharField(max_length=20, choices=TRANSMISSION_CHOICES, default='manual')
-    fuel_type = models.CharField(max_length=20, choices=FUEL_CHOICES, default='petrol')
-    engine_volume = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
+    transmission = models.CharField(
+        max_length=20, choices=TRANSMISSION_CHOICES, default="manual"
+    )
+    fuel_type = models.CharField(max_length=20, choices=FUEL_CHOICES, default="petrol")
+    engine_volume = models.DecimalField(
+        max_digits=3, decimal_places=1, null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -70,9 +92,10 @@ class Car(models.Model):
 
     @property
     def mileage_info(self):
-        if self.condition == 'new' or self.mileage == 0:
+        if self.condition == "new" or self.mileage == 0:
             return "Без пробігу"
         return f"{self.mileage} тис. км"
+
 
 class Wishlist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -80,12 +103,13 @@ class Wishlist(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'car') # Prevents duplicate wishlist items
+        unique_together = ("user", "car")
+
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, blank=True, null=True)
-    
+
     def __str__(self):
         return f"Профіль {self.user.username}"
 
@@ -94,6 +118,7 @@ class Profile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

@@ -1,46 +1,47 @@
 {% extends 'core/base.html' %}
-
 {% block content %}
-<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-ria-red"></div>
     <p class="mt-4 text-gray-600 font-medium">Авторизація через Google...</p>
-</div>
-
-<script>
-    async function handleAuthCallback() {
-        if (!window.supabaseClient) {
-            console.error('Supabase client not initialized');
-            return;
-        }
-        const { data: { session }, error } = await window.supabaseClient.auth.getSession()
-        if (session && session.user) {
-
-            const response = await fetch('{% url "auth_callback" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    email: session.user.email,
-                    id: session.user.id,
-                    full_name: session.user.user_metadata.full_name || session.user.user_metadata.name
-                })
-            });
-
-            if (response.ok) {
-
-                window.location.href = '/';
-            } else {
-                console.error('Django login failed');
-                window.location.href = '{% url "login" %}?error=django_sync_failed';
-            }
-        } else {
-            console.error('No Supabase session found', error);
-            window.location.href = '{% url "login" %}';
-        }
+  </div>
+  <script>
+  async function handleAuthCallback() {
+    if (!window.supabaseClient) {
+      console.error("Supabase client not initialized");
+      return;
     }
+    const {
+      data: { session },
+      error,
+    } = await window.supabaseClient.auth.getSession();
+    if (session && session.user) {
+      const response = await fetch('{% url "auth_callback" %}', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify({
+          email: session.user.email,
+          id: session.user.id,
+          full_name:
+            session.user.user_metadata.full_name ||
+            session.user.user_metadata.name,
+        }),
+      });
 
-    window.onload = handleAuthCallback;
-</script>
+      if (response.ok) {
+        window.location.href = "/";
+      } else {
+        console.error("Django login failed");
+        window.location.href = '{% url "login" %}?error=django_sync_failed';
+      }
+    } else {
+      console.error("No Supabase session found", error);
+      window.location.href = '{% url "login" %}';
+    }
+  }
+
+  window.onload = handleAuthCallback;
+  </script>
 {% endblock %}

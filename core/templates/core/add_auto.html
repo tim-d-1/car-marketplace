@@ -1,0 +1,226 @@
+{% extends 'core/base.html' %}
+{% block content %}
+  <div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="mb-8">
+        <h1 class="text-3xl font-black text-gray-900">Додати оголошення</h1>
+        <p class="text-gray-500 mt-2">Заповніть інформацію про ваш автомобіль</p>
+      </div>
+      <form method="POST" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+        <!-- 1. Photo Section -->
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-camera text-ria-red"></i> Фотографії
+          </h2>
+          <div id="drop-zone"
+               class="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-ria-red transition cursor-pointer group">
+            <input type="file"
+                   name="image"
+                   id="file-input"
+                   class="hidden"
+                   accept="image/*" />
+            <div class="space-y-4">
+              <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-red-50 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 group-hover:text-ria-red"></i>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-700">Перетягніть фото сюди</p>
+                <p class="text-sm text-gray-400">або натисніть, щоб вибрати файл</p>
+              </div>
+            </div>
+            <div id="preview-container" class="mt-6 hidden">
+              <img id="image-preview"
+                   src="#"
+                   alt="Preview"
+                   class="max-h-64 mx-auto rounded-lg shadow-sm" />
+            </div>
+          </div>
+        </section>
+        <!-- 2. Main Information -->
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-ria-red"></i> Основна
+            інформація
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">{{ form.vehicle_type.label }}</label>
+              {{ form.vehicle_type }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">{{ form.brand.label }}</label>
+              {{ form.brand }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">{{ form.model.label }}</label>
+              {{ form.model }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Рік випуску</label>
+              {{ form.year }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Стан</label>
+              {{ form.condition }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Регіон</label>
+              {{ form.region }}
+            </div>
+          </div>
+        </section>
+        <!-- 3. Technical Specs -->
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-gears text-ria-red"></i> Технічні характеристики
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Пробіг (тис. км)</label>
+              {{ form.mileage }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Коробка передач</label>
+              {{ form.transmission }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Тип палива</label>
+              {{ form.fuel_type }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Об'єм двигуна (л)</label>
+              {{ form.engine_volume }}
+            </div>
+          </div>
+        </section>
+        <!-- 4. Description -->
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-align-left text-ria-red"></i> Опис
+          </h2>
+          {{ form.description }}
+        </section>
+        <!-- 5. Pricing & Contact -->
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-tags text-ria-red"></i> Ціна та контакти
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Ціна</label>
+              <div class="flex gap-2">{{ form.price }} {{ form.currency }}</div>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-gray-700">Контактний телефон</label>
+              {{ form.phone }}
+            </div>
+          </div>
+        </section>
+        <div class="flex gap-4 pt-4">
+          <button type="submit"
+                  class="flex-1 bg-ria-red hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl transition shadow-lg text-lg">
+            Опублікувати оголошення
+          </button>
+          <a href="{% url 'home' %}"
+             class="px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition flex items-center">
+            Скасувати
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+  async function updateFilters(changedField) {
+    const typeSelect = document.getElementById("type-select");
+    const brandSelect = document.getElementById("brand-select");
+    const modelSelect = document.getElementById("model-select");
+
+    let typeId = typeSelect.value || "all";
+    let brandId = brandSelect.value || "all";
+
+    if (changedField === "type") {
+      brandId = "all";
+    }
+
+    let url = `/api/filter-options/?type_id=${typeId}&make_id=${brandId}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (changedField === "type" && data.makes) {
+        brandSelect.innerHTML = '<option value="">---------</option>';
+        data.makes.forEach((make) => {
+          const option = document.createElement("option");
+          option.value = make.make_id;
+          option.textContent = make.make_name;
+          brandSelect.appendChild(option);
+        });
+      } else if (changedField === "brand" && data.types) {
+        typeSelect.innerHTML = '<option value="">---------</option>';
+        data.types.forEach((t) => {
+          const option = document.createElement("option");
+          option.value = t.id;
+          option.textContent = t.name;
+          if (t.id.toString() === typeId) option.selected = true;
+          typeSelect.appendChild(option);
+        });
+      }
+
+      modelSelect.innerHTML = '<option value="">---------</option>';
+      if (data.models) {
+        data.models.forEach((model) => {
+          const option = document.createElement("option");
+          option.value = model.model_id;
+          option.textContent = model.model_name;
+          modelSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+    }
+  }
+
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const preview = document.getElementById("image-preview");
+  const previewContainer = document.getElementById("preview-container");
+
+  dropZone.addEventListener("click", () => fileInput.click());
+
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("border-ria-red", "bg-red-50");
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("border-ria-red", "bg-red-50");
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("border-ria-red", "bg-red-50");
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      fileInput.files = files;
+      handleFile(files[0]);
+    }
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      preview.src = e.target.result;
+      previewContainer.classList.remove("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+  </script>
+{% endblock %}
