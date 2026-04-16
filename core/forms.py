@@ -6,6 +6,7 @@ class CarForm(forms.ModelForm):
     vehicle_type = forms.ModelChoiceField(
         queryset=VehicleType.objects.all().order_by("name"),
         label="Тип транспорту",
+        empty_label="Обрати",
         widget=forms.Select(
             attrs={
                 "class": "ria-select",
@@ -13,6 +14,33 @@ class CarForm(forms.ModelForm):
                 "onchange": 'updateFilters("type")',
             }
         ),
+    )
+
+    brand = forms.ModelChoiceField(
+        queryset=VehicleMake.objects.all().order_by("make_name"),
+        label="Марка",
+        empty_label="Обрати",
+        widget=forms.Select(
+            attrs={
+                "class": "ria-select",
+                "id": "brand-select",
+                "onchange": 'updateFilters("brand")',
+            }
+        ),
+    )
+
+    model = forms.ModelChoiceField(
+        queryset=VehicleModel.objects.none(),
+        label="Модель",
+        empty_label="Обрати",
+        widget=forms.Select(attrs={"class": "ria-select", "id": "model-select"}),
+    )
+
+    region = forms.ModelChoiceField(
+        queryset=Region.objects.all().order_by("name"),
+        label="Регіон",
+        empty_label="Обрати",
+        widget=forms.Select(attrs={"class": "ria-select"}),
     )
 
     currency = forms.ChoiceField(
@@ -27,7 +55,7 @@ class CarForm(forms.ModelForm):
         label="Номер телефону",
         widget=forms.TextInput(
             attrs={
-                "class": "w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-ria-red focus:border-ria-red",
+                "class": "ria-select",
                 "placeholder": "+380...",
             }
         ),
@@ -50,41 +78,59 @@ class CarForm(forms.ModelForm):
             "engine_volume",
         ]
         widgets = {
-            "brand": forms.Select(
-                attrs={
-                    "class": "ria-select",
-                    "id": "brand-select",
-                    "onchange": 'updateFilters("brand")',
-                }
-            ),
-            "model": forms.Select(attrs={"class": "ria-select", "id": "model-select"}),
-            "region": forms.Select(attrs={"class": "ria-select"}),
             "year": forms.NumberInput(
                 attrs={
-                    "class": "w-full px-4 py-3 rounded-lg border border-gray-300",
+                    "class": "ria-select",
                     "min": 1900,
                     "max": 2100,
                 }
             ),
-            "price": forms.NumberInput(
-                attrs={"class": "flex-1 px-4 py-3 rounded-lg border border-gray-300"}
-            ),
+            "price": forms.NumberInput(attrs={"class": "ria-select"}),
             "description": forms.Textarea(
                 attrs={
-                    "class": "w-full px-4 py-3 rounded-lg border border-gray-300",
+                    "class": "ria-select",
                     "rows": 4,
                 }
             ),
-            "mileage": forms.NumberInput(
-                attrs={"class": "w-full px-4 py-3 rounded-lg border border-gray-300"}
-            ),
+            "mileage": forms.NumberInput(attrs={"class": "ria-select"}),
             "transmission": forms.Select(attrs={"class": "ria-select"}),
             "fuel_type": forms.Select(attrs={"class": "ria-select"}),
             "engine_volume": forms.NumberInput(
                 attrs={
-                    "class": "w-full px-4 py-3 rounded-lg border border-gray-300",
+                    "class": "ria-select",
                     "step": "0.1",
                 }
             ),
             "condition": forms.Select(attrs={"class": "ria-select"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["transmission"].choices = [("", "Обрати")] + list(
+            self.fields["transmission"].choices
+        )
+        self.fields["fuel_type"].choices = [("", "Обрати")] + list(
+            self.fields["fuel_type"].choices
+        )
+        self.fields["condition"].choices = [("", "Обрати")] + list(
+            self.fields["condition"].choices
+        )
+
+        if not self.instance.pk:
+            self.initial["transmission"] = ""
+            self.initial["fuel_type"] = ""
+            self.initial["condition"] = ""
+
+        if "brand" in self.data:
+            try:
+                brand_id = int(self.data.get("brand"))
+                self.fields["model"].queryset = VehicleModel.objects.filter(
+                    make_id=brand_id
+                ).order_by("model_name")
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            self.fields["model"].queryset = self.instance.brand.models.order_by(
+                "model_name"
+            )

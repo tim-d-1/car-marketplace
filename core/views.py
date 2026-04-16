@@ -200,7 +200,6 @@ def get_filter_options(request):
     return JsonResponse(response_data)
 
 
-@login_required
 def add_auto(request):
     if request.method == "POST":
         form = CarForm(request.POST, request.FILES)
@@ -208,18 +207,21 @@ def add_auto(request):
             car = form.save(commit=False)
 
             new_phone = form.cleaned_data.get("phone")
-            if new_phone and not request.user.profile.phone:
-                profile = request.user.profile
-                profile.phone = new_phone
-                profile.save()
+            if request.user.is_authenticated:
+                if new_phone and not request.user.profile.phone:
+                    profile = request.user.profile
+                    profile.phone = new_phone
+                    profile.save()
 
             car.save()
             messages.success(request, "Оголошення успішно додано!")
             return redirect("home")
     else:
         initial = {}
-        if request.user.profile.phone:
+
+        if request.user.is_authenticated and request.user.profile.phone:
             initial["phone"] = request.user.profile.phone
+
         form = CarForm(initial=initial)
 
     return render(request, "core/add_auto.html", {"form": form})

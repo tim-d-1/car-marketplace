@@ -1,5 +1,16 @@
 {% extends 'core/base.html' %}
 {% block content %}
+  <style>
+    .ria-select option[value=""] {
+      color: #9ca3af;
+    }
+    .ria-select, .ria-select option {
+      color: #1f2937;
+    }
+    .ria-select:has(option[value=""]:checked) {
+      color: #9ca3af;
+    }
+  </style>
   <div class="bg-gray-50 min-h-screen py-12">
     <div class="max-w-4xl mx-auto px-4">
       <div class="mb-8">
@@ -8,7 +19,6 @@
       </div>
       <form method="POST" enctype="multipart/form-data" class="space-y-8">
         {% csrf_token %}
-        <!-- 1. Photo Section -->
         <section class="wrapper-elevation round-medium p-8 bg-white">
           <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
             <i class="fa-solid fa-camera text-ria-red"></i> Фотографії
@@ -19,7 +29,7 @@
                    name="image"
                    id="file-input"
                    class="hidden"
-                   accept="image/*" />
+                   accept="image/*">
             <div class="space-y-4">
               <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-red-50 transition">
                 <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 group-hover:text-ria-red"></i>
@@ -33,86 +43,110 @@
               <img id="image-preview"
                    src="#"
                    alt="Preview"
-                   class="max-h-64 mx-auto rounded-lg shadow-sm" />
+                   class="max-h-64 mx-auto rounded-lg shadow-sm">
             </div>
           </div>
         </section>
-        <!-- 2. Main Information -->
         <section class="wrapper-elevation round-medium p-8 bg-white">
           <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-            <i class="fa-solid fa-circle-info text-ria-red"></i> Основна
-            інформація
+            <i class="fa-solid fa-circle-info text-ria-red"></i> Основна інформація
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">{{ form.vehicle_type.label }}</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Тип транспорту</span>
               {{ form.vehicle_type }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">{{ form.brand.label }}</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Марка</span>
               {{ form.brand }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">{{ form.model.label }}</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Модель</span>
               {{ form.model }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Рік випуску</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Рік випуску</span>
               {{ form.year }}
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Стан</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Стан</span>
               {{ form.condition }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Регіон</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Регіон</span>
               {{ form.region }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
           </div>
         </section>
-        <!-- 3. Technical Specs -->
         <section class="wrapper-elevation round-medium p-8 bg-white">
           <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
             <i class="fa-solid fa-gears text-ria-red"></i> Технічні характеристики
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Пробіг (тис. км)</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Пробіг (тис. км)</span>
               {{ form.mileage }}
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Коробка передач</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Коробка передач</span>
               {{ form.transmission }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Тип палива</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Тип палива</span>
               {{ form.fuel_type }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Об'єм двигуна (л)</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Об'єм двигуна (л)</span>
               {{ form.engine_volume }}
             </div>
           </div>
         </section>
-        <!-- 4. Description -->
         <section class="wrapper-elevation round-medium p-8 bg-white">
           <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
             <i class="fa-solid fa-align-left text-ria-red"></i> Опис
           </h2>
-          {{ form.description }}
+          <div class="ria-select-container">{{ form.description }}</div>
         </section>
-        <!-- 5. Pricing & Contact -->
         <section class="wrapper-elevation round-medium p-8 bg-white">
           <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
             <i class="fa-solid fa-tags text-ria-red"></i> Ціна та контакти
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Ціна</label>
-              <div class="flex gap-2">{{ form.price }} {{ form.currency }}</div>
+            <div class="flex gap-2">
+              <div class="ria-select-container flex-1">
+                <span class="ria-select-label">Ціна</span>
+                {{ form.price }}
+              </div>
+              <div class="ria-select-container w-24">
+                {{ form.currency }}
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+              </div>
             </div>
-            <div class="space-y-2">
-              <label class="block text-sm font-bold text-gray-700">Контактний телефон</label>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Контактний телефон</span>
               {{ form.phone }}
             </div>
           </div>
@@ -139,10 +173,6 @@
     let typeId = typeSelect.value || "all";
     let brandId = brandSelect.value || "all";
 
-    if (changedField === "type") {
-      brandId = "all";
-    }
-
     let url = `/api/filter-options/?type_id=${typeId}&make_id=${brandId}`;
 
     try {
@@ -150,25 +180,28 @@
       const data = await response.json();
 
       if (changedField === "type" && data.makes) {
-        brandSelect.innerHTML = '<option value="">---------</option>';
+        const currentBrand = brandSelect.value;
+        brandSelect.innerHTML = '<option value="">Обрати</option>';
         data.makes.forEach((make) => {
           const option = document.createElement("option");
           option.value = make.make_id;
           option.textContent = make.make_name;
+          if (make.make_id.toString() === currentBrand) option.selected = true;
           brandSelect.appendChild(option);
         });
       } else if (changedField === "brand" && data.types) {
-        typeSelect.innerHTML = '<option value="">---------</option>';
+        const currentType = typeSelect.value;
+        typeSelect.innerHTML = '<option value="">Обрати</option>';
         data.types.forEach((t) => {
           const option = document.createElement("option");
           option.value = t.id;
           option.textContent = t.name;
-          if (t.id.toString() === typeId) option.selected = true;
+          if (t.id.toString() === currentType) option.selected = true;
           typeSelect.appendChild(option);
         });
       }
 
-      modelSelect.innerHTML = '<option value="">---------</option>';
+      modelSelect.innerHTML = '<option value="">Обрати</option>';
       if (data.models) {
         data.models.forEach((model) => {
           const option = document.createElement("option");
