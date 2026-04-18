@@ -326,10 +326,20 @@ def logout_view(request):
 def car_detail(request, car_id):
     car = get_object_or_404(Car, id=car_id)
     in_wishlist = False
+    owner_ads_count = 0
+    if car.owner:
+        owner_ads_count = car.owner.cars.count()
+
     if request.user.is_authenticated:
         in_wishlist = Wishlist.objects.filter(user=request.user, car=car).exists()
     return render(
-        request, "core/car_detail.html", {"car": car, "in_wishlist": in_wishlist}
+        request,
+        "core/car_detail.html",
+        {
+            "car": car,
+            "in_wishlist": in_wishlist,
+            "owner_ads_count": owner_ads_count,
+        },
     )
 
 
