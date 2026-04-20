@@ -3,10 +3,8 @@
   <section class="bg-white border-b border-gray-200 py-10">
     <div class="max-w-7xl mx-auto px-4">
       <h1 class="text-4xl font-bold mb-6">Знаємо, бо перевірили</h1>
-      <form method="GET" action="{% url 'home' %}">
-        <div class="container-select scroll-horizontal flex gap-3 mb-6"
-             data-v-8398078a=""
-             data-v-75ece65c="">
+      <form method="GET" action="{% url 'home' %}" id="search-form">
+        <div class="container-select scroll-horizontal flex gap-3 mb-6">
           <div>
             <input id="search_type-1"
                    type="radio"
@@ -40,17 +38,6 @@
               <span class="common-text body">Нові</span>
             </label>
           </div>
-          <div>
-            <input id="search_type-3"
-                   type="radio"
-                   name="condition"
-                   value="import"
-                   class="select-input hidden"
-                   {% if query_condition == "import" %}checked{% endif %} />
-            <label class="select-label" for="search_type-3">
-              <span class="common-text body">Під пригон</span>
-            </label>
-          </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div class="ria-select-container">
@@ -65,9 +52,6 @@
                         {% if query_type == t.id|stringformat:"i" %}selected{% endif %}>{{ t.name }}</option>
               {% endfor %}
             </select>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <i class="fa-solid fa-chevron-down text-xs"></i>
-            </div>
           </div>
           <div class="ria-select-container">
             <span class="ria-select-label">Марка</span>
@@ -83,9 +67,6 @@
                 </option>
               {% endfor %}
             </select>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <i class="fa-solid fa-chevron-down text-xs"></i>
-            </div>
           </div>
           <div class="ria-select-container">
             <span class="ria-select-label">Модель</span>
@@ -98,9 +79,6 @@
                 </option>
               {% endfor %}
             </select>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <i class="fa-solid fa-chevron-down text-xs"></i>
-            </div>
           </div>
           <div class="ria-select-container">
             <span class="ria-select-label">Регіон</span>
@@ -111,26 +89,108 @@
                         {% if query_region == r.region_id|stringformat:"i" %}selected{% endif %}>{{ r.name }}</option>
               {% endfor %}
             </select>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <i class="fa-solid fa-chevron-down text-xs"></i>
+          </div>
+        </div>
+        <div id="advanced-search"
+             class="hidden space-y-4 mb-8 pt-6 border-t border-gray-100">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="flex gap-2">
+              <div class="ria-select-container flex-1">
+                <span class="ria-select-label">Ціна від, $</span>
+                <input type="number"
+                       name="price_from"
+                       value="{{ query_price_from }}"
+                       class="ria-select">
+              </div>
+              <div class="ria-select-container flex-1">
+                <span class="ria-select-label">до</span>
+                <input type="number"
+                       name="price_to"
+                       value="{{ query_price_to }}"
+                       class="ria-select">
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <div class="ria-select-container flex-1">
+                <span class="ria-select-label">Рік від</span>
+                <input type="number"
+                       name="year_from"
+                       value="{{ query_year_from }}"
+                       class="ria-select">
+              </div>
+              <div class="ria-select-container flex-1">
+                <span class="ria-select-label">до</span>
+                <input type="number"
+                       name="year_to"
+                       value="{{ query_year_to }}"
+                       class="ria-select">
+              </div>
+            </div>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Тип палива</span>
+              <select name="fuel_type" class="ria-select">
+                <option value="all">Всі</option>
+                {% for val, label in FUEL_CHOICES %}
+                  <option value="{{ val }}" {% if query_fuel_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="ria-select-container">
+              <span class="ria-select-label">Коробка передач</span>
+              <select name="transmission" class="ria-select">
+                <option value="all">Всі</option>
+                {% for val, label in TRANSMISSION_CHOICES %}
+                  <option value="{{ val }}"
+                          {% if query_transmission == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="ria-select-container">
+              <span class="ria-select-label">Пробіг до (тис. км)</span>
+              <input type="number"
+                     name="mileage_to"
+                     placeholder="Напр. 150"
+                     value="{{ query_mileage_to }}"
+                     class="ria-select">
             </div>
           </div>
         </div>
-        <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex flex-col md:flex-row gap-4 items-center">
           <button type="submit"
-                  class="md:w-1/4 bg-ria-red hover:bg-red-600 text-white font-bold py-4 px-8 rounded-2xl transition duration-200 text-lg">
+                  class="w-full md:w-1/4 bg-ria-red hover:bg-red-600 text-white font-bold py-4 px-8 rounded-2xl transition duration-200 text-lg">
             Шукати
           </button>
           <button type="button"
-                  class="md:w-1/4 bg-white border-2 border-black hover:bg-gray-50 text-black font-bold py-4 px-8 rounded-2xl transition duration-200 text-lg">
+                  id="advanced-toggle"
+                  class="w-full md:w-1/4 bg-white border-2 border-black hover:bg-gray-50 text-black font-bold py-4 px-8 rounded-2xl transition duration-200 text-lg">
             Розширений пошук
           </button>
+          <div class="flex-grow"></div>
+          <div class="ria-select-container w-full md:w-64">
+            <span class="ria-select-label">Сортування</span>
+            <select name="sort" class="ria-select" onchange="this.form.submit()">
+              <option value="-created_at"
+                      {% if query_sort == "-created_at" %}selected{% endif %}>Від нових до старих</option>
+              <option value="created_at"
+                      {% if query_sort == "created_at" %}selected{% endif %}>Від старих до нових</option>
+              <option value="price_asc"
+                      {% if query_sort == "price_asc" %}selected{% endif %}>Найдешевші</option>
+              <option value="price_desc"
+                      {% if query_sort == "price_desc" %}selected{% endif %}>Найдорожчі</option>
+              <option value="year_desc"
+                      {% if query_sort == "year_desc" %}selected{% endif %}>Новіші за роком</option>
+            </select>
+          </div>
         </div>
       </form>
     </div>
   </section>
   <section class="max-w-7xl mx-auto px-4 py-8">
-    <h2 class="text-xl font-bold mb-4">Рекомендовані авто</h2>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">Знайдено {{ cars|length }} авто</h2>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {% for car in cars %}
         <div class="wrapper-elevation flex flex-col round-medium shadow-mediumHover pb-4 overflow-hidden">
@@ -184,6 +244,25 @@
     </div>
   </section>
   <script>
+  // Advanced search toggle
+  const advancedToggle = document.getElementById('advanced-toggle');
+  const advancedSearch = document.getElementById('advanced-search');
+
+  // Robust check for active filters using Django template logic
+  const hasAdvancedFilters = {% if query_price_from or query_price_to or query_year_from or query_year_to or query_mileage_to or query_fuel_type != "all" and query_fuel_type or query_transmission != "all" and query_transmission %}true{% else %}false{% endif %};
+
+  if (hasAdvancedFilters) {
+    advancedSearch.classList.remove('hidden');
+    advancedToggle.textContent = 'Приховати фільтри';
+  }
+
+  advancedToggle.addEventListener('click', () => {
+    advancedSearch.classList.toggle('hidden');
+    advancedToggle.textContent = advancedSearch.classList.contains('hidden')
+      ? 'Розширений пошук'
+      : 'Приховати фільтри';
+  });
+
   async function updateFilters(changedField) {
     const typeSelect = document.getElementById('type-select');
     const brandSelect = document.getElementById('brand-select');

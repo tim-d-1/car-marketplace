@@ -85,11 +85,25 @@ def home(request):
     cars = Car.objects.all().select_related(
         "brand", "model", "region", "model__vehicle_type"
     )
+    
+    # Basic filters
     condition = request.GET.get("condition")
     type_id = request.GET.get("type")
     brand_id = request.GET.get("brand")
     model_id = request.GET.get("model")
     region_id = request.GET.get("region")
+
+    # Advanced filters
+    price_from = request.GET.get("price_from")
+    price_to = request.GET.get("price_to")
+    year_from = request.GET.get("year_from")
+    year_to = request.GET.get("year_to")
+    fuel_type = request.GET.get("fuel_type")
+    transmission = request.GET.get("transmission")
+    mileage_to = request.GET.get("mileage_to")
+    
+    # Sorting
+    sort_by = request.GET.get("sort", "-created_at")
 
     if condition and condition != "all":
         cars = cars.filter(condition=condition)
@@ -101,6 +115,34 @@ def home(request):
         cars = cars.filter(model_id=model_id)
     if region_id and region_id != "all":
         cars = cars.filter(region_id=region_id)
+
+    # Apply advanced filters
+    if price_from:
+        cars = cars.filter(price__gte=price_from)
+    if price_to:
+        cars = cars.filter(price__lte=price_to)
+    if year_from:
+        cars = cars.filter(year__gte=year_from)
+    if year_to:
+        cars = cars.filter(year__lte=year_to)
+    if fuel_type and fuel_type != "all":
+        cars = cars.filter(fuel_type=fuel_type)
+    if transmission and transmission != "all":
+        cars = cars.filter(transmission=transmission)
+    if mileage_to:
+        cars = cars.filter(mileage__lte=mileage_to)
+
+    # Sorting logic
+    if sort_by == "price_asc":
+        cars = cars.order_by("price")
+    elif sort_by == "price_desc":
+        cars = cars.order_by("-price")
+    elif sort_by == "year_desc":
+        cars = cars.order_by("-year")
+    elif sort_by == "created_at":
+        cars = cars.order_by("created_at")
+    else:
+        cars = cars.order_by("-created_at")
 
     types = cache.get("vehicle_types")
     if not types:
@@ -141,7 +183,17 @@ def home(request):
         "query_brand": brand_id,
         "query_model": model_id,
         "query_region": region_id,
+        "query_price_from": price_from,
+        "query_price_to": price_to,
+        "query_year_from": year_from,
+        "query_year_to": year_to,
+        "query_fuel_type": fuel_type,
+        "query_transmission": transmission,
+        "query_mileage_to": mileage_to,
+        "query_sort": sort_by,
         "wishlist_car_ids": wishlist_car_ids,
+        "FUEL_CHOICES": Car.FUEL_CHOICES,
+        "TRANSMISSION_CHOICES": Car.TRANSMISSION_CHOICES,
     }
     return render(request, "core/index.html", context)
 
