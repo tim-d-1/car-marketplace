@@ -8,9 +8,6 @@ supabase: Client = create_client(url, key)
 
 
 def upload_image(file, bucket: str, folder: str):
-    """
-    Uploads a file to Supabase storage and returns the public URL.
-    """
     try:
         ext = file.name.split(".")[-1]
         filename = f"{os.urandom(8).hex()}.{ext}"

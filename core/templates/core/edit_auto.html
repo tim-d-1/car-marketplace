@@ -1,0 +1,341 @@
+{% extends 'core/base.html' %}
+{% block content %}
+  <style>
+    .ria-select option[value=""] {
+      color: #9ca3af;
+    }
+    .ria-select, .ria-select option {
+      color: #1f2937;
+    }
+    .ria-select:has(option[value=""]:checked) {
+      color: #9ca3af;
+    }
+    #id_description {
+      padding: 0.4em 0.7em;
+    }
+  </style>
+  <div class="bg-gray-50 min-h-screen py-12">
+    <div class="max-w-4xl mx-auto px-4">
+      <div class="mb-8">
+        <h1 class="text-3xl font-black text-gray-900">Редагувати оголошення</h1>
+        <p class="text-gray-500 mt-2">Оновіть інформацію про ваш автомобіль</p>
+      </div>
+      <form method="POST" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+        {% if form.errors %}
+          <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-8">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-700 font-bold">Помилка у формі. Будь ласка, перевірте введені дані:</p>
+                {% if form.non_field_errors %}
+                  <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-camera text-ria-red"></i> Фотографії
+          </h2>
+          <div id="drop-zone"
+               class="border-2 border-dashed {% if form.image.errors %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-2xl p-12 text-center hover:border-ria-red transition cursor-pointer group">
+            <input type="file"
+                   name="image"
+                   id="file-input"
+                   class="hidden"
+                   accept="image/*">
+            <div class="space-y-4 {% if car.image %}hidden{% endif %}"
+                 id="upload-prompt">
+              <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto group-hover:bg-red-50 transition">
+                <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 group-hover:text-ria-red"></i>
+              </div>
+              <div>
+                <p class="text-lg font-bold text-gray-700">Перетягніть фото сюди</p>
+                <p class="text-sm text-gray-400">або натисніть, щоб змінити файл</p>
+              </div>
+            </div>
+            <div id="preview-container"
+                 class="mt-6 {% if not car.image %}hidden{% endif %}">
+              <img id="image-preview"
+                   src="{% if car.image %}{{ car.image }}{% else %}#{% endif %}"
+                   alt="Preview"
+                   class="max-h-64 mx-auto rounded-lg shadow-sm">
+              {% if car.image %}<p class="text-sm text-gray-500 mt-2">Поточне фото. Натисніть на зону, щоб замінити.</p>{% endif %}
+            </div>
+            {% if form.image.errors %}<p class="text-red-500 text-xs mt-2">{{ form.image.errors.0 }}</p>{% endif %}
+          </div>
+        </section>
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-ria-red"></i> Основна інформація
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="ria-select-container {% if form.vehicle_type.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Тип транспорту</span>
+              {{ form.vehicle_type }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.vehicle_type.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.vehicle_type.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.brand.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Марка</span>
+              {{ form.brand }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.brand.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.brand.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.model.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Модель</span>
+              {{ form.model }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.model.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.model.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.year.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Рік випуску</span>
+              {{ form.year }}
+              {% if form.year.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.year.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.condition.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Стан</span>
+              {{ form.condition }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.condition.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.condition.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.region.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Регіон</span>
+              {{ form.region }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.region.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.region.errors.0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-gears text-ria-red"></i> Технічні характеристики
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="ria-select-container {% if form.mileage.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Пробіг (тис. км)</span>
+              {{ form.mileage }}
+              {% if form.mileage.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.mileage.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.transmission.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Коробка передач</span>
+              {{ form.transmission }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.transmission.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.transmission.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.fuel_type.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Тип палива</span>
+              {{ form.fuel_type }}
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </div>
+              {% if form.fuel_type.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.fuel_type.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="ria-select-container {% if form.engine_volume.errors %}border-red-500{% endif %}">
+              <span class="ria-select-label">Об'єм двигуна (л)</span>
+              {{ form.engine_volume }}
+              {% if form.engine_volume.errors %}
+                <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.engine_volume.errors.0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-align-left text-ria-red"></i> Опис
+          </h2>
+          <div class="ria-select-container {% if form.description.errors %}border-red-500{% endif %}">
+            {{ form.description }}
+            {% if form.description.errors %}
+              <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.description.errors.0 }}</p>
+            {% endif %}
+          </div>
+        </section>
+        <section class="wrapper-elevation round-medium p-8 bg-white">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-tags text-ria-red"></i> Ціна
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="flex gap-2">
+              <div class="ria-select-container flex-1 {% if form.price.errors %}border-red-500{% endif %}">
+                <span class="ria-select-label">Ціна</span>
+                {{ form.price }}
+                {% if form.price.errors %}
+                  <p class="absolute -bottom-5 left-0 text-red-500 text-[10px]">{{ form.price.errors.0 }}</p>
+                {% endif %}
+              </div>
+              <div class="ria-select-container w-24">
+                {{ form.currency }}
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="flex gap-4 pt-4">
+          <button type="submit"
+                  class="flex-1 bg-ria-red hover:bg-red-700 text-white font-bold py-4 px-8 rounded-2xl transition shadow-lg text-lg">
+            Зберегти зміни
+          </button>
+          <a href="{% url 'my_ads' %}"
+             class="px-8 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl transition flex items-center">
+            Скасувати
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+  let modelToTypeMap = {};
+
+  async function updateFilters(changedField) {
+    const typeSelect = document.getElementById("type-select");
+    const brandSelect = document.getElementById("brand-select");
+    const modelSelect = document.getElementById("model-select");
+
+    let typeId = typeSelect.value || "all";
+    let brandId = brandSelect.value || "all";
+
+    if (changedField === "brand") {
+      typeSelect.disabled = false;
+    }
+
+    let url = `/api/filter-options/?type_id=${typeId}&make_id=${brandId}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (changedField === "type" && data.makes) {
+        const currentBrand = brandSelect.value;
+        brandSelect.innerHTML = '<option value="">Обрати</option>';
+        data.makes.forEach((make) => {
+          const option = document.createElement("option");
+          option.value = make.make_id;
+          option.textContent = make.make_name;
+          if (make.make_id.toString() === currentBrand) option.selected = true;
+          brandSelect.appendChild(option);
+        });
+      } else if (changedField === "brand" && data.types) {
+        const currentType = typeSelect.value;
+        typeSelect.innerHTML = '<option value="">Обрати</option>';
+        data.types.forEach((t) => {
+          const option = document.createElement("option");
+          option.value = t.id;
+          option.textContent = t.name;
+          if (t.id.toString() === currentType) option.selected = true;
+          typeSelect.appendChild(option);
+        });
+      }
+
+      modelSelect.innerHTML = '<option value="">Обрати</option>';
+      if (data.models) {
+        modelToTypeMap = {};
+        data.models.forEach((model) => {
+          modelToTypeMap[model.model_id] = model.vehicle_type_id;
+          const option = document.createElement("option");
+          option.value = model.model_id;
+          option.textContent = model.model_name;
+          modelSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching filter options:", error);
+    }
+  }
+
+  document.getElementById("model-select").addEventListener("change", function(e) {
+    const modelId = e.target.value;
+    const typeSelect = document.getElementById("type-select");
+
+    if (modelId && typeSelect.value === "" && modelToTypeMap[modelId]) {
+      typeSelect.value = modelToTypeMap[modelId];
+      typeSelect.disabled = true;
+    }
+  });
+
+  document.querySelector("form").addEventListener("submit", function() {
+    document.getElementById("type-select").disabled = false;
+  });
+
+  const dropZone = document.getElementById("drop-zone");
+  const fileInput = document.getElementById("file-input");
+  const preview = document.getElementById("image-preview");
+  const previewContainer = document.getElementById("preview-container");
+  const uploadPrompt = document.getElementById("upload-prompt");
+
+  dropZone.addEventListener("click", () => fileInput.click());
+
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("border-ria-red", "bg-red-50");
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("border-ria-red", "bg-red-50");
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("border-ria-red", "bg-red-50");
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      fileInput.files = files;
+      handleFile(files[0]);
+    }
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) {
+      handleFile(fileInput.files[0]);
+    }
+  });
+
+  function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      preview.src = e.target.result;
+      previewContainer.classList.remove("hidden");
+      uploadPrompt.classList.add("hidden");
+    };
+    reader.readAsDataURL(file);
+  }
+  </script>
+{% endblock %}

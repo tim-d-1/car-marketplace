@@ -133,9 +133,7 @@
     <h2 class="text-xl font-bold mb-4">Рекомендовані авто</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {% for car in cars %}
-        <div class="wrapper-elevation round-medium shadow-mediumHover pb-4 overflow-hidden"
-             style="display: flex;
-                    flex-direction: column">
+        <div class="wrapper-elevation flex flex-col round-medium shadow-mediumHover pb-4 overflow-hidden">
           <a href="{% url 'car_detail' car.id %}" class="relative group">
             <img src="{{ car.image|default:'https://via.placeholder.com/400x300' }}"
                  class="w-full h-48 object-cover"

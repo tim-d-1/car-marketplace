@@ -151,15 +151,10 @@ class CarForm(forms.ModelForm):
             self.initial["fuel_type"] = ""
             self.initial["condition"] = ""
 
-        if "brand" in self.data:
-            try:
-                brand_id = int(self.data.get("brand"))
-                self.fields["model"].queryset = VehicleModel.objects.filter(
-                    make_id=brand_id
-                ).order_by("model_name")
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            self.fields["model"].queryset = self.instance.brand.models.order_by(
-                "model_name"
-            )
+        if self.instance.pk:
+            if self.instance.brand:
+                self.fields["model"].queryset = self.instance.brand.models.order_by(
+                    "model_name"
+                )
+            if self.instance.model and self.instance.model.vehicle_type:
+                self.initial["vehicle_type"] = self.instance.model.vehicle_type

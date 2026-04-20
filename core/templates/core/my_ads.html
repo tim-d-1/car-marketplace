@@ -32,15 +32,17 @@
               <span><i class="fa-solid fa-location-dot mr-1"></i>{{ car.region.name }}</span>
               <span><i class="fa-solid fa-gas-pump mr-1"></i>{{ car.get_fuel_type_display }}</span>
             </div>
-            <div class="mt-4 flex gap-3">
+            <div class="mt-4 flex gap-3 items-center">
               <a href="{% url 'car_detail' car.id %}"
                  class="text-sm font-bold text-blue-600 hover:underline">Переглянути</a>
               <span class="text-gray-300">|</span>
-              <a href="#"
+              <a href="{% url 'edit_auto' car.id %}"
                  class="text-sm font-bold text-gray-500 hover:text-gray-700 transition">Редагувати</a>
               <span class="text-gray-300">|</span>
-              <a href="#"
-                 class="text-sm font-bold text-red-500 hover:text-red-700 transition">Видалити</a>
+              <form action="{% url 'delete_auto' car.id %}" method="POST" class="inline" onsubmit="return confirm('Ви впевнені, що хочете видалити це оголошення?')">
+                {% csrf_token %}
+                <button type="submit" class="text-sm font-bold text-red-500 hover:text-red-700 transition">Видалити</button>
+              </form>
             </div>
           </div>
         </div>

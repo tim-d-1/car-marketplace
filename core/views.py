@@ -225,6 +225,46 @@ def add_auto(request):
 
 
 @login_required
+def edit_auto(request, car_id):
+    car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if request.method == "POST":
+        form = CarForm(request.POST, request.FILES, instance=car)
+        if form.is_valid():
+            car = form.save(commit=False)
+
+            image_file = request.FILES.get("image")
+            if image_file:
+                image_url = upload_image(image_file, bucket="cars", folder="listings")
+                if image_url:
+                    car.image = image_url
+
+            new_phone = form.cleaned_data.get("phone")
+            if new_phone:
+                profile = request.user.profile
+                profile.phone = new_phone
+                profile.save()
+
+            car.save()
+            messages.success(request, "Оголошення успішно оновлено!")
+            return redirect("my_ads")
+    else:
+        initial = {"phone": request.user.profile.phone}
+        form = CarForm(instance=car, initial=initial)
+
+    return render(request, "core/edit_auto.html", {"form": form, "car": car})
+
+
+@login_required
+def delete_auto(request, car_id):
+    car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if request.method == "POST":
+        car.delete()
+        messages.success(request, "Оголошення успішно видалено!")
+        return redirect("my_ads")
+    return redirect("my_ads")
+
+
+@login_required
 def my_ads(request):
     cars = Car.objects.filter(owner=request.user).select_related(
         "brand", "model", "region"
