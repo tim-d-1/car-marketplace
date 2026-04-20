@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from .supabase_client import upload_image, supabase
 
 from core.forms import CarForm, UserProfileForm, UserRegistrationForm
 from .supabase_client import upload_image
@@ -57,8 +58,14 @@ def auth_callback_view(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            email = data.get("email")
-            full_name = data.get("full_name", "")
+            access_token = data.get("access_token")
+
+            user_response = supabase.auth.get_user(access_token)
+            if not user_response or not user_response.user:
+                return JsonResponse({"status": "error", "message": "Invalid token"}, status=401)
+
+            email = user_response.user.email
+            full_name = user_response.user.user_metadata.get("full_name", "")
 
             user, created = User.objects.get_or_create(username=email, email=email)
 
@@ -85,7 +92,7 @@ def home(request):
     cars = Car.objects.all().select_related(
         "brand", "model", "region", "model__vehicle_type"
     )
-    
+
     # Basic filters
     condition = request.GET.get("condition")
     type_id = request.GET.get("type")
@@ -101,7 +108,7 @@ def home(request):
     fuel_type = request.GET.get("fuel_type")
     transmission = request.GET.get("transmission")
     mileage_to = request.GET.get("mileage_to")
-    
+
     # Sorting
     sort_by = request.GET.get("sort", "-created_at")
 
@@ -323,7 +330,6 @@ def my_ads(request):
     )
     return render(request, "core/my_ads.html", {"cars": cars})
 
-
 @login_required
 def checkout_view(request, car_id):
     car = get_object_or_404(Car, id=car_id)
@@ -331,16 +337,18 @@ def checkout_view(request, car_id):
         messages.warning(request, "Ви не можете купити власне авто.")
         return redirect("car_detail", car_id=car.id)
 
-    try:
-        response = requests.get(
-            "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
-            timeout=5,
-        )
-        data = response.json()
-        eth_usd_rate = data["ethereum"]["usd"]
-    except Exception as e:
-        print(f"Error fetching ETH price: {e}")
-        eth_usd_rate = 3200.0
+    eth_usd_rate = cache.get("eth_usd_rate")
+    if not eth_usd_rate:
+        try:
+            response = requests.get(
+                "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+                timeout=5,
+            )
+            data = response.json()
+            eth_usd_rate = data["ethereum"]["usd"]
+            cache.set("eth_usd_rate", eth_usd_rate, 300)
+        except Exception:
+            eth_usd_rate = 3200.0
 
     eth_price = car.price / eth_usd_rate
     context = {
@@ -350,7 +358,6 @@ def checkout_view(request, car_id):
         "seller_wallet": car.owner.profile.wallet_address if car.owner else None,
     }
     return render(request, "core/checkout.html", context)
-
 
 @login_required
 def payment_success_api(request):
@@ -369,11 +376,10 @@ def payment_success_api(request):
             seller=car.owner,
             amount_eth=amount_eth,
             transaction_hash=tx_hash,
-            status="completed",  # In a real app, we'd verify on-chain
+            status="pending",
         )
         return JsonResponse({"status": "success", "purchase_id": purchase.id})
     return JsonResponse({"status": "error"}, status=400)
-
 
 @login_required
 def purchase_history(request):
@@ -455,3 +461,9 @@ def toggle_wishlist(request, car_id):
             return JsonResponse({"status": "removed"})
         return JsonResponse({"status": "added"})
     return JsonResponse({"status": "error"}, status=400)
+
+def handle_image_upload(request, field_name, bucket, folder):
+    image_file = request.FILES.get(field_name)
+    if image_file:
+        return upload_image(image_file, bucket=bucket, folder=folder)
+    return None

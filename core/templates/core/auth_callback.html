@@ -7,13 +7,13 @@
   <script>
   async function handleAuthCallback() {
     if (!window.supabaseClient) {
-      console.error("Supabase client not initialized");
       return;
     }
     const {
       data: { session },
       error,
     } = await window.supabaseClient.auth.getSession();
+
     if (session && session.user) {
       const response = await fetch('{% url "auth_callback" %}', {
         method: "POST",
@@ -22,22 +22,16 @@
           "X-CSRFToken": "{{ csrf_token }}",
         },
         body: JSON.stringify({
-          email: session.user.email,
-          id: session.user.id,
-          full_name:
-            session.user.user_metadata.full_name ||
-            session.user.user_metadata.name,
+          access_token: session.access_token
         }),
       });
 
       if (response.ok) {
         window.location.href = "/";
       } else {
-        console.error("Django login failed");
         window.location.href = '{% url "login" %}?error=django_sync_failed';
       }
     } else {
-      console.error("No Supabase session found", error);
       window.location.href = '{% url "login" %}';
     }
   }
