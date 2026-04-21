@@ -46,6 +46,11 @@
                             class="px-4 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-full transition shadow-sm">
                         Підтвердити отримання
                     </button>
+                    <button onclick="cancelOrder('{{ purchase.id }}', '{{ purchase.deal_id }}')" 
+                            id="cancel-btn-{{ purchase.id }}"
+                            class="px-4 py-1 bg-red-100 text-red-600 hover:bg-red-200 text-xs font-bold rounded-full transition shadow-sm">
+                        Скасувати
+                    </button>
                 {% endif %}
               </div>
               <a href="https://sepolia.etherscan.io/tx/{{ purchase.transaction_hash }}" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
@@ -86,8 +91,69 @@ const ESCROW_ABI = [
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+    {
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_dealId",
+				"type": "uint256"
+			}
+		],
+		"name": "cancelDeal",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ];
+
+async function cancelOrder(purchaseId, dealId) {
+    if (!confirm('Ви впевнені, що хочете скасувати замовлення? Кошти будуть повернуті покупцю.')) {
+        return;
+    }
+
+    const btn = document.getElementById(`cancel-btn-${purchaseId}`);
+    const originalText = btn.innerHTML;
+
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Скасування...';
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+
+        const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
+
+        const tx = await contract.cancelDeal(parseInt(dealId));
+        await tx.wait();
+
+        const response = await fetch("{% url 'cancel_order_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                purchase_id: purchaseId,
+                tx_hash: tx.hash
+            })
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert('Замовлення скасовано! Кошти повернуто покупцю.');
+            window.location.reload();
+        } else {
+            throw new Error(result.message || 'Помилка сервера');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(`Помилка: ${error.message || 'Транзакцію скасовано'}`);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
 
 async function confirmReceipt(purchaseId, dealId) {
     if (typeof window.ethereum === 'undefined') {

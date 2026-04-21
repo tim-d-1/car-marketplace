@@ -145,6 +145,27 @@
       </div>
     </header>
     <main>
+      <div class="max-w-7xl mx-auto px-4 mt-4">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="mb-4 p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-700 border border-yellow-200{% else %}bg-green-50 text-green-700 border border-green-200{% endif %} flex items-center justify-between gap-3 shadow-sm">
+              <div class="flex items-center gap-3">
+                {% if message.tags == 'error' %}
+                  <i class="fa-solid fa-circle-exclamation"></i>
+                {% elif message.tags == 'warning' %}
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                {% else %}
+                  <i class="fa-solid fa-circle-check"></i>
+                {% endif %}
+                {{ message }}
+              </div>
+              <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
       {% block content %}{% endblock %}
     </main>
     <footer class="bg-gray-800 text-white mt-12 py-8">

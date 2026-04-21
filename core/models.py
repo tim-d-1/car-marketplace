@@ -44,8 +44,11 @@ class Region(models.Model):
 
 
 class CarQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(status="active")
+
     def filter_by_params(self, params):
-        qs = self
+        qs = self.active()  # По замовчуванню показуємо тільки активні
         condition = params.get("condition")
         type_id = params.get("type")
         brand_id = params.get("brand")
@@ -143,6 +146,16 @@ class Car(models.Model):
     engine_volume = models.DecimalField(
         max_digits=3, decimal_places=1, null=True, blank=True
     )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "Активне"),
+            ("inactive", "Неактивне"),
+            ("pending", "В очікуванні"),
+            ("sold", "Продано"),
+        ],
+        default="active",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -150,7 +163,9 @@ class Car(models.Model):
 
     @property
     def price_uah(self):
-        return self.price * 41
+        from .utils import get_usd_uah_rate
+        rate = get_usd_uah_rate()
+        return int(self.price * rate)
 
     @property
     def mileage_info(self):
@@ -200,11 +215,6 @@ class Purchase(models.Model):
 
 
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
+def handle_user_profile(sender, instance, **kwargs):
+    Profile.objects.get_or_create(user=instance)
     instance.profile.save()

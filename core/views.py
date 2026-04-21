@@ -12,7 +12,6 @@ from django.core.cache import cache
 from .supabase_client import upload_image, supabase
 
 from core.forms import CarForm, UserProfileForm, UserRegistrationForm
-from .supabase_client import upload_image
 from .models import (
     Car,
     Profile,
@@ -21,13 +20,16 @@ from .models import (
     VehicleModel,
     Region,
     VehicleType,
+    Purchase,
 )
+
 
 def handle_image_upload(request, field_name, bucket, folder):
     image_file = request.FILES.get(field_name)
     if image_file:
         return upload_image(image_file, bucket=bucket, folder=folder)
     return None
+
 
 @login_required
 def profile_view(request):
@@ -39,7 +41,9 @@ def profile_view(request):
             profile.phone = form.cleaned_data.get("phone")
             profile.wallet_address = form.cleaned_data.get("wallet_address")
 
-            avatar_url = handle_image_upload(request, field_name="avatar", bucket="avatars", folder=f"user_{user.id}")
+            avatar_url = handle_image_upload(
+                request, field_name="avatar", bucket="avatars", folder=f"user_{user.id}"
+            )
             if avatar_url:
                 profile.avatar = avatar_url
 
@@ -64,7 +68,9 @@ def auth_callback_view(request):
 
             user_response = supabase.auth.get_user(access_token)
             if not user_response or not user_response.user:
-                return JsonResponse({"status": "error", "message": "Invalid token"}, status=401)
+                return JsonResponse(
+                    {"status": "error", "message": "Invalid token"}, status=401
+                )
 
             email = user_response.user.email
             full_name = user_response.user.user_metadata.get("full_name", "")
@@ -89,10 +95,13 @@ def auth_callback_view(request):
 
     return render(request, "core/auth_callback.html")
 
+
 def home(request):
-    cars = Car.objects.all().select_related(
-        "brand", "model", "region", "model__vehicle_type"
-    ).filter_by_params(request.GET)
+    cars = (
+        Car.objects.all()
+        .select_related("brand", "model", "region", "model__vehicle_type")
+        .filter_by_params(request.GET)
+    )
 
     types = cache.get("vehicle_types")
     if not types:
@@ -150,6 +159,7 @@ def home(request):
     }
     return render(request, "core/index.html", context)
 
+
 def get_filter_options(request):
     type_id = request.GET.get("type_id")
     make_id = request.GET.get("make_id")
@@ -202,6 +212,13 @@ def add_auto(request):
         if form.is_valid():
             car = form.save(commit=False)
 
+            currency = form.cleaned_data.get("currency")
+            if currency == "UAH":
+                from .utils import get_usd_uah_rate
+
+                rate = get_usd_uah_rate()
+                car.price = int(car.price / rate)
+
             image_url = handle_image_upload(request, "image", "cars", "listings")
             if image_url:
                 car.image = image_url
@@ -229,12 +246,27 @@ def add_auto(request):
 @login_required
 def edit_auto(request, car_id):
     car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if car.status in ["pending", "sold"]:
+        messages.error(
+            request,
+            "Ви не можете редагувати оголошення, яке знаходиться в процесі продажу або вже продано.",
+        )
+        return redirect("my_ads")
     if request.method == "POST":
         form = CarForm(request.POST, request.FILES, instance=car)
         if form.is_valid():
             car = form.save(commit=False)
 
-            image_url = handle_image_upload(request, field_name="image", bucket="cars", folder="listings")
+            currency = form.cleaned_data.get("currency")
+            if currency == "UAH":
+                from .utils import get_usd_uah_rate
+
+                rate = get_usd_uah_rate()
+                car.price = int(car.price / rate)
+
+            image_url = handle_image_upload(
+                request, field_name="image", bucket="cars", folder="listings"
+            )
             if image_url:
                 car.image = image_url
 
@@ -257,6 +289,12 @@ def edit_auto(request, car_id):
 @login_required
 def delete_auto(request, car_id):
     car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if car.status in ["pending", "sold"]:
+        messages.error(
+            request,
+            "Ви не можете видалити оголошення, яке знаходиться в процесі продажу або вже продано.",
+        )
+        return redirect("my_ads")
     if request.method == "POST":
         car.delete()
         messages.success(request, "Оголошення успішно видалено!")
@@ -266,14 +304,49 @@ def delete_auto(request, car_id):
 
 @login_required
 def my_ads(request):
+    tab = request.GET.get("tab", "active")
     cars = Car.objects.filter(owner=request.user).select_related(
         "brand", "model", "region"
     )
-    return render(request, "core/my_ads.html", {"cars": cars})
+
+    if tab == "active":
+        cars = cars.filter(status="active")
+    elif tab == "inactive":
+        cars = cars.filter(status="inactive")
+    elif tab == "pending":
+        cars = cars.filter(status="pending")
+        for car in cars:
+            car.current_purchase = Purchase.objects.filter(
+                car=car, status="pending"
+            ).first()
+    elif tab == "sold":
+        cars = cars.filter(status="sold")
+
+    return render(request, "core/my_ads.html", {"cars": cars, "active_tab": tab})
+
+
+@login_required
+def toggle_car_status(request, car_id):
+    car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if car.status == "active":
+        car.status = "inactive"
+        messages.success(request, "Оголошення деактивовано.")
+    elif car.status == "inactive":
+        car.status = "active"
+        messages.success(request, "Оголошення активовано.")
+    else:
+        messages.error(request, "Неможливо змінити статус оголошення в даному стані.")
+    car.save()
+    return redirect("my_ads")
+
 
 @login_required
 def checkout_view(request, car_id):
     car = get_object_or_404(Car, id=car_id)
+    if car.status != "active":
+        messages.error(request, "Це авто зараз недоступне для купівлі.")
+        return redirect("car_detail", car_id=car.id)
+
     if car.owner == request.user:
         messages.warning(request, "Ви не можете купити власне авто.")
         return redirect("car_detail", car_id=car.id)
@@ -299,6 +372,8 @@ def checkout_view(request, car_id):
         "seller_wallet": car.owner.profile.wallet_address if car.owner else None,
     }
     return render(request, "core/checkout.html", context)
+
+
 @csrf_exempt
 @login_required
 def payment_success_api(request):
@@ -310,7 +385,8 @@ def payment_success_api(request):
         deal_id = data.get("deal_id")
 
         car = get_object_or_404(Car, id=car_id)
-        from .models import Purchase
+        car.status = "pending"
+        car.save()
 
         purchase = Purchase.objects.create(
             car=car,
@@ -331,22 +407,50 @@ def confirm_delivery_api(request):
     if request.method == "POST":
         data = json.loads(request.body)
         purchase_id = data.get("purchase_id")
-        tx_hash = data.get("tx_hash")
-
-        from .models import Purchase
 
         purchase = get_object_or_404(Purchase, id=purchase_id, buyer=request.user)
         purchase.status = "completed"
-        # transaction_hash is already set to the creation tx, maybe we want to keep it or add a separate one for release
-        # For simplicity, we just update status
         purchase.save()
+
+        if purchase.car:
+            purchase.car.status = "sold"
+            purchase.car.save()
+
+        return JsonResponse({"status": "success"})
+    return JsonResponse({"status": "error"}, status=400)
+
+
+@csrf_exempt
+@login_required
+def cancel_order_api(request):
+    """API for cancelling order from both sides"""
+    if request.method == "POST":
+        data = json.loads(request.body)
+        purchase_id = data.get("purchase_id")
+
+        purchase = get_object_or_404(Purchase, id=purchase_id)
+
+        if request.user != purchase.buyer and request.user != purchase.seller:
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized"}, status=403
+            )
+
+        purchase.status = "cancelled"
+        purchase.save()
+
+        if purchase.car:
+            purchase.car.status = "active"
+            purchase.car.save()
+
         return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error"}, status=400)
 
 
 @login_required
 def purchase_history(request):
-    purchases = request.user.purchases.all().select_related("car", "car__brand", "car__model", "seller")
+    purchases = request.user.purchases.all().select_related(
+        "car", "car__brand", "car__model", "seller"
+    )
     return render(request, "core/purchase_history.html", {"purchases": purchases})
 
 
@@ -424,4 +528,3 @@ def toggle_wishlist(request, car_id):
             return JsonResponse({"status": "removed"})
         return JsonResponse({"status": "added"})
     return JsonResponse({"status": "error"}, status=400)
-

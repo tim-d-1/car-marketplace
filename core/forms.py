@@ -74,7 +74,7 @@ class CarForm(forms.ModelForm):
     )
 
     currency = forms.ChoiceField(
-        choices=[("USD", "$"), ("EUR", "€"), ("UAH", "грн")],
+        choices=[("USD", "$"), ("UAH", "грн")],
         initial="USD",
         widget=forms.Select(attrs={"class": "ria-select w-24"}),
     )
@@ -151,7 +151,15 @@ class CarForm(forms.ModelForm):
             self.initial["fuel_type"] = ""
             self.initial["condition"] = ""
 
-        if self.instance.pk:
+        if "brand" in self.data:
+            try:
+                brand_id = int(self.data.get("brand"))
+                self.fields["model"].queryset = VehicleModel.objects.filter(
+                    make_id=brand_id
+                ).order_by("model_name")
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
             if self.instance.brand:
                 self.fields["model"].queryset = self.instance.brand.models.order_by(
                     "model_name"
