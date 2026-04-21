@@ -36,9 +36,18 @@
               </div>
             </div>
             <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full w-fit">
-                {{ purchase.get_status_display }}
-              </span>
+              <div class="flex items-center gap-3">
+                <span class="px-3 py-1 {% if purchase.status == 'completed' %}bg-green-100 text-green-700{% elif purchase.status == 'pending' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %} text-xs font-bold rounded-full w-fit">
+                    {{ purchase.get_status_display }}
+                </span>
+                {% if purchase.status == 'pending' and purchase.deal_id is not None %}
+                    <button onclick="confirmReceipt('{{ purchase.id }}', '{{ purchase.deal_id }}')" 
+                            id="confirm-btn-{{ purchase.id }}"
+                            class="px-4 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-full transition shadow-sm">
+                        Підтвердити отримання
+                    </button>
+                {% endif %}
+              </div>
               <a href="https://sepolia.etherscan.io/tx/{{ purchase.transaction_hash }}" target="_blank" class="text-xs text-blue-500 hover:underline flex items-center gap-1">
                 <i class="fa-solid fa-external-link text-[10px]"></i>
                 Переглянути в Etherscan
@@ -60,4 +69,82 @@
       </a>
     </div>
   {% endif %}
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <script>
+const ESCROW_CONTRACT_ADDRESS = "{{ ESCROW_CONTRACT_ADDRESS }}"; 
+const ESCROW_ABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_dealId",
+				"type": "uint256"
+			}
+		],
+		"name": "confirmReceipt",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
+
+async function confirmReceipt(purchaseId, dealId) {
+    if (typeof window.ethereum === 'undefined') {
+        alert('Будь ласка, встановіть MetaMask!');
+        return;
+    }
+
+    if (!ESCROW_CONTRACT_ADDRESS || ESCROW_CONTRACT_ADDRESS === "" || ESCROW_CONTRACT_ADDRESS === "0xYOUR_DEPLOYED_CONTRACT_ADDRESS") {
+        alert('Конфігурація контракту не завершена. Будь ласка, вкажіть ESCROW_CONTRACT_ADDRESS в .env файлі.');
+        return;
+    }
+
+    const btn = document.getElementById(`confirm-btn-${purchaseId}`);
+    const originalText = btn.innerHTML;
+
+    if (!confirm('Ви підтверджуєте отримання автомобіля? Кошти будуть перераховані продавцю.')) {
+        return;
+    }
+
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Обробка...';
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+
+        const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
+
+        const tx = await contract.confirmReceipt(parseInt(dealId));
+        await tx.wait();
+
+        const response = await fetch("{% url 'confirm_delivery_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                purchase_id: purchaseId,
+                tx_hash: tx.hash
+            })
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            alert('Отримання підтверджено! Кошти надіслано продавцю.');
+            window.location.reload();
+        } else {
+            throw new Error('Помилка сервера');
+        }
+    } catch (error) {
+        console.error(error);
+        alert(`Помилка: ${error.message || 'Транзакцію скасовано'}`);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+  </script>
 {% endblock %}

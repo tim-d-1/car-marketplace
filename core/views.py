@@ -7,6 +7,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from .supabase_client import upload_image, supabase
 
@@ -22,6 +23,11 @@ from .models import (
     VehicleType,
 )
 
+def handle_image_upload(request, field_name, bucket, folder):
+    image_file = request.FILES.get(field_name)
+    if image_file:
+        return upload_image(image_file, bucket=bucket, folder=folder)
+    return None
 
 @login_required
 def profile_view(request):
@@ -33,13 +39,9 @@ def profile_view(request):
             profile.phone = form.cleaned_data.get("phone")
             profile.wallet_address = form.cleaned_data.get("wallet_address")
 
-            avatar_file = request.FILES.get("avatar")
-            if avatar_file:
-                avatar_url = upload_image(
-                    avatar_file, bucket="avatars", folder=f"user_{user.id}"
-                )
-                if avatar_url:
-                    profile.avatar = avatar_url
+            avatar_url = handle_image_upload(request, field_name="avatar", bucket="avatars", folder=f"user_{user.id}")
+            if avatar_url:
+                profile.avatar = avatar_url
 
             profile.save()
             messages.success(request, "Ваш профіль успішно оновлено!")
@@ -87,69 +89,10 @@ def auth_callback_view(request):
 
     return render(request, "core/auth_callback.html")
 
-
 def home(request):
     cars = Car.objects.all().select_related(
         "brand", "model", "region", "model__vehicle_type"
-    )
-
-    # Basic filters
-    condition = request.GET.get("condition")
-    type_id = request.GET.get("type")
-    brand_id = request.GET.get("brand")
-    model_id = request.GET.get("model")
-    region_id = request.GET.get("region")
-
-    # Advanced filters
-    price_from = request.GET.get("price_from")
-    price_to = request.GET.get("price_to")
-    year_from = request.GET.get("year_from")
-    year_to = request.GET.get("year_to")
-    fuel_type = request.GET.get("fuel_type")
-    transmission = request.GET.get("transmission")
-    mileage_to = request.GET.get("mileage_to")
-
-    # Sorting
-    sort_by = request.GET.get("sort", "-created_at")
-
-    if condition and condition != "all":
-        cars = cars.filter(condition=condition)
-    if type_id and type_id != "all":
-        cars = cars.filter(model__vehicle_type_id=type_id)
-    if brand_id and brand_id != "all":
-        cars = cars.filter(brand_id=brand_id)
-    if model_id and model_id != "all":
-        cars = cars.filter(model_id=model_id)
-    if region_id and region_id != "all":
-        cars = cars.filter(region_id=region_id)
-
-    # Apply advanced filters
-    if price_from:
-        cars = cars.filter(price__gte=price_from)
-    if price_to:
-        cars = cars.filter(price__lte=price_to)
-    if year_from:
-        cars = cars.filter(year__gte=year_from)
-    if year_to:
-        cars = cars.filter(year__lte=year_to)
-    if fuel_type and fuel_type != "all":
-        cars = cars.filter(fuel_type=fuel_type)
-    if transmission and transmission != "all":
-        cars = cars.filter(transmission=transmission)
-    if mileage_to:
-        cars = cars.filter(mileage__lte=mileage_to)
-
-    # Sorting logic
-    if sort_by == "price_asc":
-        cars = cars.order_by("price")
-    elif sort_by == "price_desc":
-        cars = cars.order_by("-price")
-    elif sort_by == "year_desc":
-        cars = cars.order_by("-year")
-    elif sort_by == "created_at":
-        cars = cars.order_by("created_at")
-    else:
-        cars = cars.order_by("-created_at")
+    ).filter_by_params(request.GET)
 
     types = cache.get("vehicle_types")
     if not types:
@@ -165,6 +108,9 @@ def home(request):
     if not regions:
         regions = list(Region.objects.all().order_by("name"))
         cache.set("ukraine_regions", regions, 3600)
+
+    brand_id = request.GET.get("brand")
+    type_id = request.GET.get("type")
 
     models = VehicleModel.objects.none()
     if brand_id and brand_id != "all":
@@ -185,25 +131,24 @@ def home(request):
         "brands": brands,
         "models": models,
         "regions": regions,
-        "query_condition": condition,
-        "query_type": type_id,
-        "query_brand": brand_id,
-        "query_model": model_id,
-        "query_region": region_id,
-        "query_price_from": price_from,
-        "query_price_to": price_to,
-        "query_year_from": year_from,
-        "query_year_to": year_to,
-        "query_fuel_type": fuel_type,
-        "query_transmission": transmission,
-        "query_mileage_to": mileage_to,
-        "query_sort": sort_by,
+        "query_condition": request.GET.get("condition"),
+        "query_type": request.GET.get("type"),
+        "query_brand": request.GET.get("brand"),
+        "query_model": request.GET.get("model"),
+        "query_region": request.GET.get("region"),
+        "query_price_from": request.GET.get("price_from"),
+        "query_price_to": request.GET.get("price_to"),
+        "query_year_from": request.GET.get("year_from"),
+        "query_year_to": request.GET.get("year_to"),
+        "query_fuel_type": request.GET.get("fuel_type"),
+        "query_transmission": request.GET.get("transmission"),
+        "query_mileage_to": request.GET.get("mileage_to"),
+        "query_sort": request.GET.get("sort", "-created_at"),
         "wishlist_car_ids": wishlist_car_ids,
         "FUEL_CHOICES": Car.FUEL_CHOICES,
         "TRANSMISSION_CHOICES": Car.TRANSMISSION_CHOICES,
     }
     return render(request, "core/index.html", context)
-
 
 def get_filter_options(request):
     type_id = request.GET.get("type_id")
@@ -257,11 +202,9 @@ def add_auto(request):
         if form.is_valid():
             car = form.save(commit=False)
 
-            image_file = request.FILES.get("image")
-            if image_file:
-                image_url = upload_image(image_file, bucket="cars", folder="listings")
-                if image_url:
-                    car.image = image_url
+            image_url = handle_image_upload(request, "image", "cars", "listings")
+            if image_url:
+                car.image = image_url
 
             new_phone = form.cleaned_data.get("phone")
             if request.user.is_authenticated:
@@ -291,11 +234,9 @@ def edit_auto(request, car_id):
         if form.is_valid():
             car = form.save(commit=False)
 
-            image_file = request.FILES.get("image")
-            if image_file:
-                image_url = upload_image(image_file, bucket="cars", folder="listings")
-                if image_url:
-                    car.image = image_url
+            image_url = handle_image_upload(request, field_name="image", bucket="cars", folder="listings")
+            if image_url:
+                car.image = image_url
 
             new_phone = form.cleaned_data.get("phone")
             if new_phone:
@@ -358,7 +299,7 @@ def checkout_view(request, car_id):
         "seller_wallet": car.owner.profile.wallet_address if car.owner else None,
     }
     return render(request, "core/checkout.html", context)
-
+@csrf_exempt
 @login_required
 def payment_success_api(request):
     if request.method == "POST":
@@ -366,6 +307,7 @@ def payment_success_api(request):
         car_id = data.get("car_id")
         tx_hash = data.get("tx_hash")
         amount_eth = data.get("amount_eth")
+        deal_id = data.get("deal_id")
 
         car = get_object_or_404(Car, id=car_id)
         from .models import Purchase
@@ -376,10 +318,31 @@ def payment_success_api(request):
             seller=car.owner,
             amount_eth=amount_eth,
             transaction_hash=tx_hash,
+            deal_id=deal_id,
             status="pending",
         )
         return JsonResponse({"status": "success", "purchase_id": purchase.id})
     return JsonResponse({"status": "error"}, status=400)
+
+
+@csrf_exempt
+@login_required
+def confirm_delivery_api(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        purchase_id = data.get("purchase_id")
+        tx_hash = data.get("tx_hash")
+
+        from .models import Purchase
+
+        purchase = get_object_or_404(Purchase, id=purchase_id, buyer=request.user)
+        purchase.status = "completed"
+        # transaction_hash is already set to the creation tx, maybe we want to keep it or add a separate one for release
+        # For simplicity, we just update status
+        purchase.save()
+        return JsonResponse({"status": "success"})
+    return JsonResponse({"status": "error"}, status=400)
+
 
 @login_required
 def purchase_history(request):
@@ -462,8 +425,3 @@ def toggle_wishlist(request, car_id):
         return JsonResponse({"status": "added"})
     return JsonResponse({"status": "error"}, status=400)
 
-def handle_image_upload(request, field_name, bucket, folder):
-    image_file = request.FILES.get(field_name)
-    if image_file:
-        return upload_image(image_file, bucket=bucket, folder=folder)
-    return None

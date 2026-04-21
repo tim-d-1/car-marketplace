@@ -56,6 +56,238 @@
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script>
+const ESCROW_CONTRACT_ADDRESS = "{{ ESCROW_CONTRACT_ADDRESS }}";
+const ESCROW_ABI = [
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "dealId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "DealCancelled",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "dealId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "carId",
+				"type": "uint256"
+			}
+		],
+		"name": "DealCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "dealId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "FundsReleased",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_dealId",
+				"type": "uint256"
+			}
+		],
+		"name": "cancelDeal",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_dealId",
+				"type": "uint256"
+			}
+		],
+		"name": "confirmReceipt",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address payable",
+				"name": "_seller",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_carId",
+				"type": "uint256"
+			}
+		],
+		"name": "createDeal",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "deals",
+		"outputs": [
+			{
+				"internalType": "address payable",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address payable",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum CarEscrow.Status",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "carId",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_dealId",
+				"type": "uint256"
+			}
+		],
+		"name": "getDeal",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "enum CarEscrow.Status",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "carId",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "nextDealId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
 document.addEventListener('DOMContentLoaded', () => {
     const payButton = document.getElementById('pay-button');
     const statusMsg = document.getElementById('status-message');
@@ -77,6 +309,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            if (!ESCROW_CONTRACT_ADDRESS || ESCROW_CONTRACT_ADDRESS === "" || ESCROW_CONTRACT_ADDRESS === "0xYOUR_DEPLOYED_CONTRACT_ADDRESS") {
+                showStatus('Конфігурація контракту не завершена. Будь ласка, вкажіть ESCROW_CONTRACT_ADDRESS в .env файлі.', 'error');
+                return;
+            }
+
             try {
                 payButton.disabled = true;
                 payButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Обробка...';
@@ -84,17 +321,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 const signer = provider.getSigner();
+                const buyerAddress = await signer.getAddress();
+                const sellerAddress = "{{ seller_wallet }}";
 
-                const tx = {
-                    to: "{{ seller_wallet }}",
-                    value: ethers.utils.parseEther("{{ eth_price_str }}")
-                };
+                if (buyerAddress.toLowerCase() === sellerAddress.toLowerCase()) {
+                    showStatus('Ви не можете купити авто у самого себе (адреси гаманців збігаються). Будь ласка, змініть акаунт у MetaMask.', 'error');
+                    payButton.disabled = false;
+                    payButton.innerHTML = 'Сплатити через MetaMask';
+                    return;
+                }
 
-                showStatus('Будь ласка, підтвердіть транзакцію в MetaMask...');
-                const transaction = await signer.sendTransaction(tx);
+                const contract = new ethers.Contract(ESCROW_CONTRACT_ADDRESS, ESCROW_ABI, signer);
+
+                showStatus('Будь ласка, підтвердіть створення угоди в MetaMask...');
+
+                const ethAmount = ethers.utils.parseEther("{{ eth_price_str }}");
+                const carId = parseInt("{{ car.id }}");
+
+                const tx = await contract.createDeal("{{ seller_wallet }}", carId, { value: ethAmount });
 
                 showStatus('Транзакція надіслана. Очікуємо підтвердження мережі...');
-                await transaction.wait();
+                const receipt = await tx.wait();
+
+                const event = receipt.events.find(e => e.event === 'DealCreated');
+                const dealId = event.args.dealId.toNumber();
 
                 const response = await fetch("{% url 'payment_success_api' %}", {
                     method: "POST",
@@ -104,18 +354,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify({
                         car_id: "{{ car.id }}",
-                        tx_hash: transaction.hash,
-                        amount_eth: "{{ eth_price_str }}"
+                        tx_hash: tx.hash,
+                        amount_eth: "{{ eth_price_str }}",
+                        deal_id: dealId
                     })
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    showStatus('Оплату успішно завершено! Перенаправляємо...', 'success');
+                    showStatus('Кошти успішно переведено! Перенаправляємо...', 'success');
                     setTimeout(() => {
                         window.location.href = "{% url 'purchase_history' %}";
                     }, 2000);
                 } else {
-                    throw new Error('Backend error');
+                    throw new Error('Помилка сервера при збереженні даних');
                 }
 
             } catch (error) {

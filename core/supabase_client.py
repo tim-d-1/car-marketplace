@@ -1,11 +1,13 @@
 import os
+import logging
 from supabase import create_client, Client
+
+logger = logging.getLogger(__name__)
 
 url: str = os.getenv("SUPABASE_URL")
 key: str = os.getenv("SUPABASE_ANON_KEY")
 
 supabase: Client = create_client(url, key)
-
 
 def upload_image(file, bucket: str, folder: str):
     try:
@@ -21,5 +23,5 @@ def upload_image(file, bucket: str, folder: str):
         public_url = supabase.storage.from_(bucket).get_public_url(path)
         return public_url
     except Exception as e:
-        print(f"Supabase upload error: {e}")
+        logger.error("Supabase upload error: %s", e)
         return None
