@@ -114,36 +114,87 @@
         <a href="{% url 'home' %}"
            class="flex items-center space-x-2 text-2xl font-bold text-gray-800">
           <i class="fa-solid fa-car text-ria-red"></i>
-          <span>AUTO.RIA<span class="text-sm font-normal text-gray-500"></span></span>
+          <span>AUTO.RIA</span>
         </a>
-        <div class="flex items-center space-x-6">
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center space-x-6">
           {% if user.is_authenticated %}
-            <a href="{% url 'profile' %}"
-               class="text-gray-600 hover:text-ria-red transition duration-200"
-               title="Мій Профіль">
+            <a href="{% url 'profile' %}" class="text-gray-600 hover:text-ria-red transition duration-200" title="Мій Профіль">
               <i class="fa-regular fa-user text-xl"></i>
             </a>
-            <a href="{% url 'wishlist' %}"
-               class="text-gray-600 hover:text-ria-red transition duration-200"
-               title="Обране">
+            <a href="{% url 'wishlist' %}" class="text-gray-600 hover:text-ria-red transition duration-200" title="Обране">
               <i class="fa-regular fa-heart text-xl"></i>
             </a>
-            <a href="{% url 'logout' %}"
-               class="text-gray-600 hover:text-ria-red transition duration-200"
-               title="Вихід">
+            <a href="{% url 'logout' %}" class="text-gray-600 hover:text-ria-red transition duration-200" title="Вихід">
               <i class="fa-solid fa-right-from-bracket text-xl"></i>
             </a>
           {% else %}
-            <a href="{% url 'login' %}"
-               class="text-gray-600 hover:text-ria-red transition duration-200 hidden md:block">Вхід в кабінет</a>
+            <a href="{% url 'login' %}" class="text-gray-600 hover:text-ria-red transition duration-200">Вхід в кабінет</a>
           {% endif %}
           <a href="{% url 'add_auto' %}"
              class="bg-white hover:bg-gray-100 text-black font-semibold py-2 px-6 rounded-full border-2 border-black transition duration-200">
             <i class="fa-solid fa-plus mr-2"></i>Продати авто
           </a>
         </div>
+
+        <!-- Mobile Menu Button -->
+        <div class="md:hidden flex items-center">
+          <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900 focus:outline-none p-2">
+            <i class="fa-solid fa-bars text-2xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-4 shadow-lg absolute w-full left-0">
+        {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" class="flex items-center gap-3 text-gray-700 font-medium py-2">
+            <i class="fa-regular fa-user w-6"></i> Мій Профіль
+          </a>
+          <a href="{% url 'wishlist' %}" class="flex items-center gap-3 text-gray-700 font-medium py-2">
+            <i class="fa-regular fa-heart w-6"></i> Обране
+          </a>
+          <a href="{% url 'my_ads' %}" class="flex items-center gap-3 text-gray-700 font-medium py-2">
+            <i class="fa-solid fa-list w-6"></i> Мої оголошення
+          </a>
+          <a href="{% url 'purchase_history' %}" class="flex items-center gap-3 text-gray-700 font-medium py-2">
+            <i class="fa-solid fa-history w-6"></i> Історія покупок
+          </a>
+          <a href="{% url 'logout' %}" class="flex items-center gap-3 text-red-600 font-medium py-2">
+            <i class="fa-solid fa-right-from-bracket w-6"></i> Вихід
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="block text-gray-700 font-medium py-2">Вхід в кабінет</a>
+          <a href="{% url 'register' %}" class="block text-gray-700 font-medium py-2">Реєстрація</a>
+        {% endif %}
+        <div class="pt-2">
+          <a href="{% url 'add_auto' %}"
+             class="block w-full bg-ria-red hover:bg-red-700 text-white text-center font-bold py-3 rounded-xl transition duration-200">
+            <i class="fa-solid fa-plus mr-2"></i>Продати авто
+          </a>
+        </div>
       </div>
     </header>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        if (menuButton && mobileMenu) {
+          menuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            const icon = menuButton.querySelector('i');
+            if (mobileMenu.classList.contains('hidden')) {
+              icon.classList.replace('fa-xmark', 'fa-bars');
+            } else {
+              icon.classList.replace('fa-bars', 'fa-xmark');
+            }
+          });
+        }
+      });
+    </script>
     <main>
       <div class="max-w-7xl mx-auto px-4 mt-4">
         {% if messages %}
@@ -168,7 +219,72 @@
       </div>
       {% block content %}{% endblock %}
     </main>
-    <footer class="bg-gray-800 text-white mt-12 py-8">
+    <footer class="bg-white border-t border-gray-200 pt-12 pb-8 mt-12">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <!-- Logo & About -->
+          <div class="col-span-1">
+            <a href="{% url 'home' %}" class="flex items-center space-x-2 text-2xl font-bold text-gray-800 mb-4">
+              <i class="fa-solid fa-car text-ria-red"></i>
+              <span>AUTO.RIA</span>
+            </a>
+            <p class="text-gray-600 text-sm leading-relaxed">
+              Найбільший сайт з продажу авто в Україні. Купуйте та продавайте автомобілі безпечно з нашою платформою.
+            </p>
+          </div>
+
+          <!-- Quick Links -->
+          <div>
+            <h4 class="text-gray-900 font-bold mb-4 uppercase text-xs tracking-wider">Навігація</h4>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li><a href="{% url 'home' %}" class="hover:text-ria-red transition duration-200">Головна</a></li>
+              <li><a href="{% url 'add_auto' %}" class="hover:text-ria-red transition duration-200">Продати авто</a></li>
+              <li><a href="{% url 'home' %}" class="hover:text-ria-red transition duration-200">Пошук авто</a></li>
+            </ul>
+          </div>
+
+          <!-- Account -->
+          <div>
+            <h4 class="text-gray-900 font-bold mb-4 uppercase text-xs tracking-wider">Кабінет</h4>
+            <ul class="space-y-2 text-sm text-gray-600">
+              {% if user.is_authenticated %}
+                <li><a href="{% url 'profile' %}" class="hover:text-ria-red transition duration-200">Мій профіль</a></li>
+                <li><a href="{% url 'my_ads' %}" class="hover:text-ria-red transition duration-200">Мої оголошення</a></li>
+                <li><a href="{% url 'wishlist' %}" class="hover:text-ria-red transition duration-200">Обране</a></li>
+                <li><a href="{% url 'purchase_history' %}" class="hover:text-ria-red transition duration-200">Історія покупок</a></li>
+              {% else %}
+                <li><a href="{% url 'login' %}" class="hover:text-ria-red transition duration-200">Увійти</a></li>
+                <li><a href="{% url 'register' %}" class="hover:text-ria-red transition duration-200">Зареєструватися</a></li>
+              {% endif %}
+            </ul>
+          </div>
+
+          <!-- Contact & Social -->
+          <div>
+            <h4 class="text-gray-900 font-bold mb-4 uppercase text-xs tracking-wider">Контакти</h4>
+            <div class="flex space-x-4 mb-4">
+              <a href="#" class="text-gray-400 hover:text-ria-red transition duration-200 text-xl"><i class="fa-brands fa-facebook"></i></a>
+              <a href="#" class="text-gray-400 hover:text-ria-red transition duration-200 text-xl"><i class="fa-brands fa-instagram"></i></a>
+              <a href="#" class="text-gray-400 hover:text-ria-red transition duration-200 text-xl"><i class="fa-brands fa-telegram"></i></a>
+              <a href="#" class="text-gray-400 hover:text-ria-red transition duration-200 text-xl"><i class="fa-brands fa-youtube"></i></a>
+            </div>
+            <p class="text-xs text-gray-500">
+              Маєте запитання? Напишіть нам у чат або зателефонуйте.
+            </p>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p class="text-xs text-gray-500">
+            &copy; 2024 RIA.com. Усі права захищені.
+          </p>
+          <div class="flex space-x-6 text-xs text-gray-500">
+            <a href="#" class="hover:text-gray-900">Політика конфіденційності</a>
+            <a href="#" class="hover:text-gray-900">Умови використання</a>
+            <a href="#" class="hover:text-gray-900">Допомога</a>
+          </div>
+        </div>
+      </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>

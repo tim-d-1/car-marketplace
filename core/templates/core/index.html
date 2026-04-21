@@ -227,10 +227,10 @@
               <div class="footnote text-gray-700">{{ car.mileage_info }}</div>
               <div class="footnote text-gray-700">{{ car.get_transmission_display }}</div>
               <div class="footnote text-gray-700">
-                {{ car.get_fuel_type_display }}
+                {{ car.get_fuel_type_display }},
                 {% if car.engine_volume %}
-                  ,
-                  {{ car.engine_volume }}
+                  {% load l10n %}
+                  {{ car.engine_volume|stringformat:".2f" }}
                 {% endif %}
               </div>
               <div class="footnote text-gray-700">{{ car.region.name }}</div>
@@ -244,11 +244,9 @@
     </div>
   </section>
   <script>
-  // Advanced search toggle
   const advancedToggle = document.getElementById('advanced-toggle');
   const advancedSearch = document.getElementById('advanced-search');
 
-  // Robust check for active filters using Django template logic
   const hasAdvancedFilters = {% if query_price_from or query_price_to or query_year_from or query_year_to or query_mileage_to or query_fuel_type != "all" and query_fuel_type or query_transmission != "all" and query_transmission %}true{% else %}false{% endif %};
 
   if (hasAdvancedFilters) {

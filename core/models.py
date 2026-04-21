@@ -48,7 +48,7 @@ class CarQuerySet(models.QuerySet):
         return self.filter(status="active")
 
     def filter_by_params(self, params):
-        qs = self.active()  # По замовчуванню показуємо тільки активні
+        qs = self.active()
         condition = params.get("condition")
         type_id = params.get("type")
         brand_id = params.get("brand")
@@ -206,7 +206,7 @@ class Purchase(models.Model):
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sales")
     amount_eth = models.DecimalField(max_digits=20, decimal_places=10)
     transaction_hash = models.CharField(max_length=66, unique=True)
-    deal_id = models.IntegerField(null=True, blank=True)  # ID угоди в смарт-контракті
+    deal_id = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
 

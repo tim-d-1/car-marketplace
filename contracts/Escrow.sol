@@ -9,7 +9,7 @@ contract CarEscrow {
         address payable seller;
         uint256 amount;
         Status status;
-        uint256 carId; // For reference
+        uint256 carId;
     }
 
     mapping(uint256 => Deal) public deals;
