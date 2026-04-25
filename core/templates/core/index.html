@@ -194,7 +194,6 @@
     <div class="grid grid-cols-1 {% if not user.is_staff %}md:grid-cols-2 lg:grid-cols-4{% endif %} gap-6">
       {% for car in cars %}
         {% if user.is_staff %}
-          <!-- Admin Management Card (Horizontal) -->
           <div class="flex flex-col sm:flex-row gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white relative">
             <div class="w-full sm:w-48 h-32 flex-shrink-0">
               {% if car.image %}
@@ -214,16 +213,16 @@
                     <a href="{% url 'car_detail' car.id %}">{{ car.brand.make_name }} {{ car.model.model_name }} {{ car.year }}</a>
                   </h3>
                   <div class="mt-1 flex items-center gap-2">
-                      {% if car.status == 'active' %}
-                          <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Активне</span>
-                      {% elif car.status == 'inactive' %}
-                          <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Неактивне</span>
-                      {% elif car.status == 'pending' %}
-                          <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продаж у процесі</span>
-                      {% elif car.status == 'sold' %}
-                          <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продано</span>
-                      {% endif %}
-                      <span class="text-xs text-gray-400">Власник: <span class="font-bold">{{ car.owner.username }}</span></span>
+                    {% if car.status == 'active' %}
+                      <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Активне</span>
+                    {% elif car.status == 'inactive' %}
+                      <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Неактивне</span>
+                    {% elif car.status == 'pending' %}
+                      <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продаж у процесі</span>
+                    {% elif car.status == 'sold' %}
+                      <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продано</span>
+                    {% endif %}
+                    <span class="text-xs text-gray-400">Власник: <span class="font-bold">{{ car.owner.username }}</span></span>
                   </div>
                 </div>
                 <div class="text-xl font-bold text-ria-green">${{ car.price }}</div>
@@ -233,25 +232,34 @@
                 <span><i class="fa-solid fa-location-dot mr-1"></i>{{ car.region.name }}</span>
                 <span><i class="fa-solid fa-gas-pump mr-1"></i>{{ car.get_fuel_type_display }}</span>
               </div>
-              
               <div class="mt-4 flex flex-wrap gap-3 items-center border-t pt-4">
-                <a href="{% url 'car_detail' car.id %}" class="text-xs font-bold text-blue-600 hover:underline">Переглянути</a>
+                <a href="{% url 'car_detail' car.id %}"
+                   class="text-xs font-bold text-blue-600 hover:underline">Переглянути</a>
                 <span class="text-gray-300 text-xs">|</span>
-                <a href="{% url 'edit_auto' car.id %}" class="text-xs font-bold text-gray-600 hover:text-blue-600 transition">Редагувати</a>
+                <a href="{% url 'edit_auto' car.id %}"
+                   class="text-xs font-bold text-gray-600 hover:text-blue-600 transition">Редагувати</a>
                 <span class="text-gray-300 text-xs">|</span>
-                <a href="{% url 'toggle_car_status' car.id %}" class="text-xs font-bold {% if car.status == 'active' %}text-orange-600{% else %}text-green-600{% endif %} hover:underline">
-                    {% if car.status == 'active' %}Деактивувати{% else %}Активувати{% endif %}
+                <a href="{% url 'toggle_car_status' car.id %}"
+                   class="text-xs font-bold {% if car.status == 'active' %}text-orange-600{% else %}text-green-600{% endif %} hover:underline">
+                  {% if car.status == 'active' %}
+                    Деактивувати
+                  {% else %}
+                    Активувати
+                  {% endif %}
                 </a>
                 <span class="text-gray-300 text-xs">|</span>
-                <form action="{% url 'delete_auto' car.id %}" method="POST" class="inline" onsubmit="return confirm('Ви впевнені, що хочете видалити це оголошення?')">
-                    {% csrf_token %}
-                    <button type="submit" class="text-xs font-bold text-red-500 hover:text-red-700 transition">Видалити</button>
+                <form action="{% url 'delete_auto' car.id %}"
+                      method="POST"
+                      class="inline"
+                      onsubmit="return confirm('Ви впевнені, що хочете видалити це оголошення?')">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="text-xs font-bold text-red-500 hover:text-red-700 transition">Видалити</button>
                 </form>
               </div>
             </div>
           </div>
         {% else %}
-          <!-- Standard User Grid Card -->
           <div class="wrapper-elevation flex flex-col round-medium shadow-mediumHover pb-4 overflow-hidden">
             <a href="{% url 'car_detail' car.id %}" class="relative group">
               <img src="{{ car.image|default:'https://via.placeholder.com/400x300' }}"

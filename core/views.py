@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from .supabase_client import upload_image, supabase
+from .utils import create_notification
 
 from core.forms import CarForm, UserProfileForm, UserRegistrationForm, AdminUserEditForm
 from .models import (
@@ -377,9 +378,19 @@ def toggle_car_status(request, car_id):
     if car.status == "active":
         car.status = "inactive"
         messages.success(request, "Оголошення деактивовано.")
+        create_notification(
+            user=car.owner,
+            text=f"Ваше оголошення {car.brand.make_name} {car.model.model_name} було деактивовано.",
+            link="/profile/my-ads/?tab=inactive",
+        )
     elif car.status == "inactive":
         car.status = "active"
         messages.success(request, "Оголошення активовано.")
+        create_notification(
+            user=car.owner,
+            text=f"Ваше оголошення {car.brand.make_name} {car.model.model_name} тепер знову активне!",
+            link="/profile/my-ads/?tab=active",
+        )
     else:
         messages.error(request, "Неможливо змінити статус оголошення в даному стані.")
     car.save()
@@ -447,6 +458,13 @@ def payment_success_api(request):
             deal_id=deal_id,
             status="pending",
         )
+
+        create_notification(
+            user=car.owner,
+            text=f"Ваше авто {car.brand.make_name} {car.model.model_name} було куплено! Очікуйте на підтвердження отримання від покупця.",
+            link="/profile/my-ads/?tab=pending",
+        )
+
         return JsonResponse({"status": "success", "purchase_id": purchase.id})
     return JsonResponse({"status": "error"}, status=400)
 
@@ -465,6 +483,12 @@ def confirm_delivery_api(request):
         if purchase.car:
             purchase.car.status = "sold"
             purchase.car.save()
+
+        create_notification(
+            user=purchase.seller,
+            text=f"Покупець {purchase.buyer.username} підтвердив отримання авто {purchase.car}. Кошти вивільнено!",
+            link="/profile/my-ads/?tab=sold",
+        )
 
         return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error"}, status=400)
@@ -490,6 +514,20 @@ def cancel_order_api(request):
         if purchase.car:
             purchase.car.status = "active"
             purchase.car.save()
+
+        # Notify the other party
+        if request.user == purchase.buyer:
+            create_notification(
+                user=purchase.seller,
+                text=f"Покупець скасував замовлення на авто {purchase.car}.",
+                link="/profile/my-ads/",
+            )
+        elif request.user == purchase.seller:
+            create_notification(
+                user=purchase.buyer,
+                text=f"Продавець скасував ваше замовлення на авто {purchase.car}.",
+                link="/profile/purchases/",
+            )
 
         return JsonResponse({"status": "success"})
     return JsonResponse({"status": "error"}, status=400)
@@ -567,6 +605,26 @@ def wishlist_view(request):
         "car", "car__brand", "car__model"
     )
     return render(request, "core/wishlist.html", {"wishlist_items": wishlist_items})
+
+
+@login_required
+def notifications_view(request):
+    notifications = request.user.notifications.all()
+    return render(
+        request, "core/notifications.html", {"notifications": notifications}
+    )
+
+
+@login_required
+def mark_notification_read(request, notification_id):
+    notification = get_object_or_404(
+        Notification, id=notification_id, user=request.user
+    )
+    notification.is_read = True
+    notification.save()
+    if notification.link:
+        return redirect(notification.link)
+    return redirect("notifications")
 
 
 @login_required

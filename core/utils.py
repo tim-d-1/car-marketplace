@@ -23,3 +23,9 @@ def get_usd_uah_rate():
         print(f"Error fetching exchange rate: {e}")
 
     return 41.5
+
+
+def create_notification(user, text, link=None):
+    from .models import Notification
+
+    return Notification.objects.create(user=user, text=text, link=link)

@@ -1,167 +1,172 @@
 {% extends 'core/base.html' %}
 {% block content %}
-<div class="bg-gray-50 min-h-screen py-8">
-  <div class="max-w-7xl mx-auto px-4">
-    <div class="mb-8 flex items-center gap-4">
-      <a href="{% url 'admin_users_list' %}" class="w-12 h-12 flex items-center justify-center bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition text-gray-500">
-        <i class="fa-solid fa-arrow-left"></i>
-      </a>
-      <div>
-        <h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Редагування користувача</h1>
-        <p class="text-gray-500 text-sm font-bold">{{ managed_user.username }} (ID: {{ managed_user.id }})</p>
+  <div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="mb-8 flex items-center gap-4">
+        <a href="{% url 'admin_users_list' %}"
+           class="w-12 h-12 flex items-center justify-center bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition text-gray-500">
+          <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div>
+          <h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">Редагування користувача</h1>
+          <p class="text-gray-500 text-sm font-bold">{{ managed_user.username }} (ID: {{ managed_user.id }})</p>
+        </div>
       </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Left Column: Profile Form -->
-      <div class="lg:col-span-2 space-y-8">
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
-          <form method="POST" enctype="multipart/form-data" class="space-y-6">
-            {% csrf_token %}
-            
-            <div class="flex flex-col sm:flex-row gap-8 items-start mb-8">
-              <div class="relative group">
-                <div class="w-32 h-32 bg-gray-100 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
-                  {% if managed_user.profile.avatar %}
-                    <img src="{{ managed_user.profile.avatar }}" id="avatar-preview" class="w-full h-full object-cover">
-                  {% else %}
-                    <div class="w-full h-full flex items-center justify-center text-gray-300">
-                      <i class="fa-solid fa-user text-4xl"></i>
-                    </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-8">
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+              {% csrf_token %}
+              <div class="flex flex-col sm:flex-row gap-8 items-start mb-8">
+                <div class="relative group">
+                  <div class="w-32 h-32 bg-gray-100 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
+                    {% if managed_user.profile.avatar %}
+                      <img src="{{ managed_user.profile.avatar }}"
+                           id="avatar-preview"
+                           class="w-full h-full object-cover">
+                    {% else %}
+                      <div class="w-full h-full flex items-center justify-center text-gray-300">
+                        <i class="fa-solid fa-user text-4xl"></i>
+                      </div>
+                    {% endif %}
+                  </div>
+                  <label class="absolute -bottom-2 -right-2 w-10 h-10 bg-ria-red text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-red-700 transition">
+                    <i class="fa-solid fa-camera"></i>
+                    <input type="file"
+                           name="avatar"
+                           class="hidden"
+                           onchange="previewAvatar(this)">
+                  </label>
+                </div>
+                <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div class="ria-select-container">
+                    <span class="ria-select-label">Ім'я</span>
+                    {{ form.first_name }}
+                  </div>
+                  <div class="ria-select-container">
+                    <span class="ria-select-label">Прізвище</span>
+                    {{ form.last_name }}
+                  </div>
+                  <div class="ria-select-container sm:col-span-2">
+                    <span class="ria-select-label">Email</span>
+                    {{ form.email }}
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="ria-select-container">
+                  <span class="ria-select-label">Телефон</span>
+                  <input type="text"
+                         name="phone"
+                         value="{{ form.phone.value|default:'' }}"
+                         class="ria-select">
+                </div>
+                <div class="ria-select-container">
+                  <span class="ria-select-label">MetaMask Гаманець</span>
+                  <input type="text"
+                         name="wallet_address"
+                         value="{{ form.wallet_address.value|default:'' }}"
+                         class="ria-select">
+                </div>
+                <div class="ria-select-container">
+                  <span class="ria-select-label">Новий пароль (залишіть порожнім, щоб не змінювати)</span>
+                  {{ form.new_password }}
+                </div>
+                <div class="flex flex-col gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div class="flex items-center gap-3">
+                    {{ form.is_active }}
+                    <label for="{{ form.is_active.id_for_label }}"
+                           class="font-bold text-sm text-gray-700">Активний акаунт</label>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    {{ form.is_staff }}
+                    <label for="{{ form.is_staff.id_for_label }}"
+                           class="font-bold text-sm text-gray-700">Права адміністратора</label>
+                  </div>
+                  {% if form.is_staff.disabled %}
+                    <p class="text-[10px] text-gray-400 italic">{{ form.is_staff.help_text }}</p>
                   {% endif %}
                 </div>
-                <label class="absolute -bottom-2 -right-2 w-10 h-10 bg-ria-red text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-red-700 transition">
-                  <i class="fa-solid fa-camera"></i>
-                  <input type="file" name="avatar" class="hidden" onchange="previewAvatar(this)">
-                </label>
               </div>
-              <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div class="ria-select-container">
-                  <span class="ria-select-label">Ім'я</span>
-                  {{ form.first_name }}
-                </div>
-                <div class="ria-select-container">
-                  <span class="ria-select-label">Прізвище</span>
-                  {{ form.last_name }}
-                </div>
-                <div class="ria-select-container sm:col-span-2">
-                  <span class="ria-select-label">Email</span>
-                  {{ form.email }}
-                </div>
+              <div class="pt-6 border-t border-gray-100 flex justify-end">
+                <button type="submit"
+                        class="bg-ria-red hover:bg-red-700 text-white font-black py-4 px-12 rounded-2xl transition shadow-lg text-lg">
+                  Зберегти зміни
+                </button>
               </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div class="ria-select-container">
-                <span class="ria-select-label">Телефон</span>
-                <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" class="ria-select">
-              </div>
-              <div class="ria-select-container">
-                <span class="ria-select-label">MetaMask Гаманець</span>
-                <input type="text" name="wallet_address" value="{{ form.wallet_address.value|default:'' }}" class="ria-select">
-              </div>
-              <div class="ria-select-container">
-                <span class="ria-select-label">Новий пароль (залишіть порожнім, щоб не змінювати)</span>
-                {{ form.new_password }}
-              </div>
-              <div class="flex flex-col gap-4 p-4 bg-gray-50 rounded-2xl">
-                <div class="flex items-center gap-3">
-                  {{ form.is_active }}
-                  <label for="{{ form.is_active.id_for_label }}" class="font-bold text-sm text-gray-700">Активний акаунт</label>
-                </div>
-                <div class="flex items-center gap-3">
-                  {{ form.is_staff }}
-                  <label for="{{ form.is_staff.id_for_label }}" class="font-bold text-sm text-gray-700">Права адміністратора</label>
-                </div>
-                {% if form.is_staff.disabled %}
-                  <p class="text-[10px] text-gray-400 italic">{{ form.is_staff.help_text }}</p>
-                {% endif %}
-              </div>
-            </div>
-
-            <div class="pt-6 border-t border-gray-100 flex justify-end">
-              <button type="submit" class="bg-ria-red hover:bg-red-700 text-white font-black py-4 px-12 rounded-2xl transition shadow-lg text-lg">
-                Зберегти зміни
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Purchase History -->
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
-          <h2 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-            <i class="fa-solid fa-history text-ria-red"></i> Історія покупок
-          </h2>
-          {% if purchases %}
-            <div class="space-y-4">
-              {% for p in purchases %}
-                <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div class="w-16 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
-                    <img src="{{ p.car.image|default:'https://via.placeholder.com/100x75' }}" class="w-full h-full object-cover">
+            </form>
+          </div>
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
+            <h2 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
+              <i class="fa-solid fa-history text-ria-red"></i> Історія покупок
+            </h2>
+            {% if purchases %}
+              <div class="space-y-4">
+                {% for p in purchases %}
+                  <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="w-16 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="{{ p.car.image|default:'https://via.placeholder.com/100x75' }}"
+                           class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow">
+                      <div class="font-bold text-sm text-gray-900">{{ p.car.brand.make_name }} {{ p.car.model.model_name }}</div>
+                      <div class="text-xs text-gray-400">Продавець: {{ p.seller.username }} · {{ p.created_at|date:"d.m.Y" }}</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="font-black text-ria-green">${{ p.car.price }}</div>
+                      <span class="text-[10px] font-bold uppercase text-gray-400">{{ p.get_status_display }}</span>
+                    </div>
                   </div>
-                  <div class="flex-grow">
-                    <div class="font-bold text-sm text-gray-900">{{ p.car.brand.make_name }} {{ p.car.model.model_name }}</div>
-                    <div class="text-xs text-gray-400">Продавець: {{ p.seller.username }} · {{ p.created_at|date:"d.m.Y" }}</div>
-                  </div>
-                  <div class="text-right">
-                    <div class="font-black text-ria-green">${{ p.car.price }}</div>
-                    <span class="text-[10px] font-bold uppercase text-gray-400">{{ p.get_status_display }}</span>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="text-gray-400 text-sm italic">Користувач ще нічого не купував.</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Right Column: Stats & Sales -->
-      <div class="space-y-8">
-        <div class="bg-ria-red rounded-3xl p-8 text-white shadow-xl shadow-red-200">
-          <div class="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Зареєстровано</div>
-          <div class="text-2xl font-black mb-6">{{ managed_user.date_joined|date:"d F Y" }}</div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-              <div class="text-[10px] font-bold uppercase opacity-70 mb-1">Покупок</div>
-              <div class="text-2xl font-black">{{ purchases.count }}</div>
-            </div>
-            <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
-              <div class="text-[10px] font-bold uppercase opacity-70 mb-1">Продажів</div>
-              <div class="text-2xl font-black">{{ sales.count }}</div>
-            </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-400 text-sm italic">Користувач ще нічого не купував.</p>
+            {% endif %}
           </div>
         </div>
-
-        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
-          <h2 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
-            <i class="fa-solid fa-tag text-ria-red"></i> Історія продажів
-          </h2>
-          {% if sales %}
-            <div class="space-y-4">
-              {% for s in sales %}
-                <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div class="w-16 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
-                    <img src="{{ s.car.image|default:'https://via.placeholder.com/100x75' }}" class="w-full h-full object-cover">
-                  </div>
-                  <div class="flex-grow">
-                    <div class="font-bold text-sm text-gray-900">{{ s.car.brand.make_name }} {{ s.car.model.model_name }}</div>
-                    <div class="text-xs text-gray-400">Покупець: {{ s.buyer.username }}</div>
-                  </div>
-                </div>
-              {% endfor %}
+        <div class="space-y-8">
+          <div class="bg-ria-red rounded-3xl p-8 text-white shadow-xl shadow-red-200">
+            <div class="text-xs font-bold uppercase tracking-widest opacity-70 mb-1">Зареєстровано</div>
+            <div class="text-2xl font-black mb-6">{{ managed_user.date_joined|date:"d F Y" }}</div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                <div class="text-[10px] font-bold uppercase opacity-70 mb-1">Покупок</div>
+                <div class="text-2xl font-black">{{ purchases.count }}</div>
+              </div>
+              <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                <div class="text-[10px] font-bold uppercase opacity-70 mb-1">Продажів</div>
+                <div class="text-2xl font-black">{{ sales.count }}</div>
+              </div>
             </div>
-          {% else %}
-            <p class="text-gray-400 text-sm italic">Користувач ще нічого не продавав.</p>
-          {% endif %}
+          </div>
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
+            <h2 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-6 flex items-center gap-2">
+              <i class="fa-solid fa-tag text-ria-red"></i> Історія продажів
+            </h2>
+            {% if sales %}
+              <div class="space-y-4">
+                {% for s in sales %}
+                  <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="w-16 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
+                      <img src="{{ s.car.image|default:'https://via.placeholder.com/100x75' }}"
+                           class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow">
+                      <div class="font-bold text-sm text-gray-900">{{ s.car.brand.make_name }} {{ s.car.model.model_name }}</div>
+                      <div class="text-xs text-gray-400">Покупець: {{ s.buyer.username }}</div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-gray-400 text-sm italic">Користувач ще нічого не продавав.</p>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-
-<style>
+  <style>
   .ria-select {
     width: 100%;
     padding: 1.5rem 0.75rem 0.5rem 0.75rem;
@@ -172,9 +177,8 @@
     border: none;
     font-size: 0.95rem;
   }
-</style>
-
-<script>
+  </style>
+  <script>
 function previewAvatar(input) {
   if (input.files && input.files[0]) {
     var reader = new FileReader();
@@ -185,7 +189,6 @@ function previewAvatar(input) {
   }
 }
 
-// Add ria-select class to form fields
 document.addEventListener('DOMContentLoaded', () => {
     const fields = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
     fields.forEach(f => {
@@ -194,5 +197,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-</script>
+  </script>
 {% endblock %}
