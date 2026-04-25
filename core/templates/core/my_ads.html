@@ -1,117 +1,219 @@
 {% extends 'core/profile_base.html' %}
 {% block profile_content %}
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-gray-100 gap-4">
-    <h1 class="text-2xl font-bold text-gray-900">Мої оголошення</h1>
-    <a href="{% url 'add_auto' %}"
-       class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md text-sm">
-      + Додати оголошення
-    </a>
-  </div>
-
-  <!-- Tabs -->
-  <div class="flex flex-wrap gap-2 mb-8 bg-gray-50 p-1 rounded-xl w-fit">
-    <a href="?tab=active" class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'active' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
-        Активні
-    </a>
-    <a href="?tab=inactive" class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'inactive' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
-        Неактивні
-    </a>
-    <a href="?tab=pending" class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'pending' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
-        В очікуванні
-    </a>
-    <a href="?tab=sold" class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'sold' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
-        Придбані
-    </a>
-  </div>
-
-  {% if cars %}
-    <div class="space-y-6">
-      {% for car in cars %}
-        <div class="flex flex-col sm:flex-row gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white relative">
-          <div class="w-full sm:w-48 h-32 flex-shrink-0">
-            {% if car.image %}
-              <img src="{{ car.image }}"
-                   alt="{{ car.brand.make_name }} {{ car.model.model_name }}"
-                   class="w-full h-full object-cover rounded-lg">
-            {% else %}
-              <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-                <i class="fa-solid fa-camera text-3xl text-gray-300"></i>
-              </div>
-            {% endif %}
-          </div>
-          <div class="flex-grow">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="text-xl font-bold text-blue-700">{{ car.brand.make_name }} {{ car.model.model_name }} {{ car.year }}</h3>
-                <div class="mt-1">
-                    {% if car.status == 'active' %}
-                        <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Активне</span>
-                    {% elif car.status == 'inactive' %}
-                        <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Неактивне</span>
-                    {% elif car.status == 'pending' %}
-                        <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продаж у процесі</span>
-                    {% elif car.status == 'sold' %}
-                        <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продано</span>
-                    {% endif %}
-                </div>
-              </div>
-              <div class="text-xl font-bold text-ria-green">${{ car.price }}</div>
-            </div>
-            <div class="mt-2 text-sm text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
-              <span><i class="fa-solid fa-gauge-high mr-1"></i>{{ car.mileage_info }}</span>
-              <span><i class="fa-solid fa-location-dot mr-1"></i>{{ car.region.name }}</span>
-              <span><i class="fa-solid fa-gas-pump mr-1"></i>{{ car.get_fuel_type_display }}</span>
-            </div>
-            
-            <div class="mt-4 flex flex-wrap gap-3 items-center border-t pt-4">
-              <a href="{% url 'car_detail' car.id %}" class="text-xs font-bold text-blue-600 hover:underline">Переглянути</a>
-              
-              {% if car.status == 'active' or car.status == 'inactive' %}
-                <span class="text-gray-300 text-xs">|</span>
-                <a href="{% url 'edit_auto' car.id %}" class="text-xs font-bold text-gray-600 hover:text-blue-600 transition">Редагувати</a>
-                <span class="text-gray-300 text-xs">|</span>
-                <a href="{% url 'toggle_car_status' car.id %}" class="text-xs font-bold {% if car.status == 'active' %}text-orange-600{% else %}text-green-600{% endif %} hover:underline">
-                    {% if car.status == 'active' %}Деактивувати{% else %}Активувати{% endif %}
-                </a>
-                <span class="text-gray-300 text-xs">|</span>
-                <form action="{% url 'delete_auto' car.id %}" method="POST" class="inline" onsubmit="return confirm('Ви впевнені, що хочете видалити це оголошення?')">
-                    {% csrf_token %}
-                    <button type="submit" class="text-xs font-bold text-red-500 hover:text-red-700 transition">Видалити</button>
-                </form>
-              {% endif %}
-
-              {% if car.status == 'pending' and car.current_purchase %}
-                <span class="text-gray-300 text-xs">|</span>
-                <button onclick="cancelOrder('{{ car.current_purchase.id }}', '{{ car.current_purchase.deal_id }}')" 
-                        id="cancel-btn-{{ car.current_purchase.id }}"
-                        class="text-xs font-bold text-red-600 hover:underline">
-                    Скасувати продаж
-                </button>
-              {% endif %}
-            </div>
-          </div>
+  {% if is_admin %}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-gray-100 gap-4">
+      <h1 class="text-2xl font-bold text-gray-900">Керування замовленнями (Admin)</h1>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
+      <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Пошук (Username, Email, Телефон, Deal ID)</label>
+          <input type="text"
+                 name="q"
+                 value="{{ query }}"
+                 placeholder="Введіть дані для пошуку..."
+                 class="w-full bg-gray-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-ria-red transition">
         </div>
-      {% endfor %}
+        <div>
+          <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Сортування</label>
+          <select name="sort"
+                  class="w-full bg-gray-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-ria-red transition">
+            <option value="-created_at" {% if sort == "-created_at" %}selected{% endif %}>Найновіші</option>
+            <option value="created_at" {% if sort == "created_at" %}selected{% endif %}>Найстаріші</option>
+            <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Найдорожчі</option>
+            <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Найдешевші</option>
+          </select>
+        </div>
+        <button type="submit"
+                class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-md">
+          Застосувати
+        </button>
+      </form>
     </div>
-  {% else %}
-    <div class="text-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
-      <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-        <i class="fa-solid fa-car-side text-4xl text-gray-300"></i>
+    {% if purchases %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <th class="px-4 py-4">ID / Дата</th>
+              <th class="px-4 py-4">Автомобіль</th>
+              <th class="px-4 py-4">Покупець / Продавець</th>
+              <th class="px-4 py-4">Сума / Статус</th>
+              <th class="px-4 py-4 text-right">Дії</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            {% for p in purchases %}
+              <tr class="hover:bg-gray-50/50 transition">
+                <td class="px-4 py-4">
+                  <div class="font-bold text-gray-900">#{{ p.deal_id|default:"-" }}</div>
+                  <div class="text-[10px] text-gray-400 mt-1">{{ p.created_at|date:"d.m.Y H:i" }}</div>
+                </td>
+                <td class="px-4 py-4">
+                  <a href="{% url 'car_detail' p.car.id %}"
+                     class="font-bold text-blue-600 hover:underline">
+                    {{ p.car.brand.make_name }} {{ p.car.model.model_name }}
+                  </a>
+                  <div class="text-[10px] text-gray-400 mt-1">${{ p.car.price }}</div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="text-sm">
+                    <span class="text-gray-400">Пок:</span> <span class="font-medium">{{ p.buyer.username }}</span>
+                  </div>
+                  <div class="text-sm mt-1">
+                    <span class="text-gray-400">Прод:</span> <span class="font-medium">{{ p.seller.username }}</span>
+                  </div>
+                </td>
+                <td class="px-4 py-4">
+                  <div class="font-bold text-gray-900">{{ p.amount_eth|floatformat:6 }} ETH</div>
+                  <div class="mt-1">
+                    {% if p.status == 'pending' %}
+                      <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase">Сплачено</span>
+                    {% elif p.status == 'completed' %}
+                      <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase">Завершено</span>
+                    {% elif p.status == 'cancelled' %}
+                      <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold uppercase">Скасовано</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td class="px-4 py-4 text-right">
+                  {% if p.status == 'pending' %}
+                    <button onclick="cancelOrder('{{ p.id }}', '{{ p.deal_id }}')"
+                            id="cancel-btn-{{ p.id }}"
+                            class="text-xs font-bold text-red-600 hover:underline">Скасувати</button>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-      <h2 class="text-xl font-bold text-gray-800 mb-2">Оголошень не знайдено</h2>
-      <p class="text-gray-500 mb-8">У цій вкладці поки що порожньо.</p>
-      {% if active_tab == 'active' %}
+    {% else %}
+      <div class="text-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <p class="text-gray-500">Замовлень не знайдено.</p>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-gray-100 gap-4">
+      <h1 class="text-2xl font-bold text-gray-900">Мої оголошення</h1>
       <a href="{% url 'add_auto' %}"
-         class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-md">
-        Додати оголошення
+         class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md text-sm">
+        + Додати оголошення
       </a>
-      {% endif %}
     </div>
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 mb-8 bg-gray-50 p-1 rounded-xl w-fit">
+      <a href="?tab=active"
+         class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'active' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        Активні
+      </a>
+      <a href="?tab=inactive"
+         class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'inactive' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        Неактивні
+      </a>
+      <a href="?tab=pending"
+         class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'pending' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        В очікуванні
+      </a>
+      <a href="?tab=sold"
+         class="px-4 py-2 rounded-lg text-sm font-bold transition {% if active_tab == 'sold' %}bg-white text-blue-600 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        Придбані
+      </a>
+    </div>
+    {% if cars %}
+      <div class="space-y-6">
+        {% for car in cars %}
+          <div class="flex flex-col sm:flex-row gap-6 p-4 border border-gray-100 rounded-xl hover:shadow-md transition bg-white relative">
+            <div class="w-full sm:w-48 h-32 flex-shrink-0">
+              {% if car.image %}
+                <img src="{{ car.image }}"
+                     alt="{{ car.brand.make_name }} {{ car.model.model_name }}"
+                     class="w-full h-full object-cover rounded-lg">
+              {% else %}
+                <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                  <i class="fa-solid fa-camera text-3xl text-gray-300"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="flex-grow">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-xl font-bold text-blue-700">{{ car.brand.make_name }} {{ car.model.model_name }} {{ car.year }}</h3>
+                  <div class="mt-1">
+                    {% if car.status == 'active' %}
+                      <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Активне</span>
+                    {% elif car.status == 'inactive' %}
+                      <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Неактивне</span>
+                    {% elif car.status == 'pending' %}
+                      <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продаж у процесі</span>
+                    {% elif car.status == 'sold' %}
+                      <span class="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Продано</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="text-xl font-bold text-ria-green">${{ car.price }}</div>
+              </div>
+              <div class="mt-2 text-sm text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+                <span><i class="fa-solid fa-gauge-high mr-1"></i>{{ car.mileage_info }}</span>
+                <span><i class="fa-solid fa-location-dot mr-1"></i>{{ car.region.name }}</span>
+                <span><i class="fa-solid fa-gas-pump mr-1"></i>{{ car.get_fuel_type_display }}</span>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-3 items-center border-t pt-4">
+                <a href="{% url 'car_detail' car.id %}"
+                   class="text-xs font-bold text-blue-600 hover:underline">Переглянути</a>
+                {% if car.status == 'active' or car.status == 'inactive' %}
+                  <span class="text-gray-300 text-xs">|</span>
+                  <a href="{% url 'edit_auto' car.id %}"
+                     class="text-xs font-bold text-gray-600 hover:text-blue-600 transition">Редагувати</a>
+                  <span class="text-gray-300 text-xs">|</span>
+                  <a href="{% url 'toggle_car_status' car.id %}"
+                     class="text-xs font-bold {% if car.status == 'active' %}text-orange-600{% else %}text-green-600{% endif %} hover:underline">
+                    {% if car.status == 'active' %}
+                      Деактивувати
+                    {% else %}
+                      Активувати
+                    {% endif %}
+                  </a>
+                  <span class="text-gray-300 text-xs">|</span>
+                  <form action="{% url 'delete_auto' car.id %}"
+                        method="POST"
+                        class="inline"
+                        onsubmit="return confirm('Ви впевнені, що хочете видалити це оголошення?')">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="text-xs font-bold text-red-500 hover:text-red-700 transition">Видалити</button>
+                  </form>
+                {% endif %}
+                {% if car.status == 'pending' and car.current_purchase %}
+                  <span class="text-gray-300 text-xs">|</span>
+                  <button onclick="cancelOrder('{{ car.current_purchase.id }}', '{{ car.current_purchase.deal_id }}')"
+                          id="cancel-btn-{{ car.current_purchase.id }}"
+                          class="text-xs font-bold text-red-600 hover:underline">Скасувати продаж</button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-car-side text-4xl text-gray-300"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">Оголошень не знайдено</h2>
+        <p class="text-gray-500 mb-8">У цій вкладці поки що порожньо.</p>
+        {% if active_tab == 'active' %}
+          <a href="{% url 'add_auto' %}"
+             class="bg-ria-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-md">
+            Додати оголошення
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
   {% endif %}
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
   <script>
-    const ESCROW_CONTRACT_ADDRESS = "{{ ESCROW_CONTRACT_ADDRESS }}"; 
+    const ESCROW_CONTRACT_ADDRESS = "{{ ESCROW_CONTRACT_ADDRESS }}";
     const ESCROW_ABI = [
         {
             "inputs": [

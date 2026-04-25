@@ -119,6 +119,14 @@
         
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
+          {% if user.is_staff %}
+            <a href="{% url 'my_ads' %}" class="text-ria-red font-bold hover:text-red-700 transition duration-200" title="Керування замовленнями">
+              <i class="fa-solid fa-receipt mr-1"></i>Замовлення
+            </a>
+            <a href="{% url 'admin_users_list' %}" class="text-blue-600 font-bold hover:text-blue-800 transition duration-200" title="Користувачі">
+              <i class="fa-solid fa-users mr-1"></i>Користувачі
+            </a>
+          {% endif %}
           {% if user.is_authenticated %}
             <a href="{% url 'profile' %}" class="text-gray-600 hover:text-ria-red transition duration-200" title="Мій Профіль">
               <i class="fa-regular fa-user text-xl"></i>
@@ -148,6 +156,16 @@
 
       <!-- Mobile Dropdown Menu -->
       <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-4 shadow-lg absolute w-full left-0">
+        {% if user.is_staff %}
+          <div class="pb-2 border-b border-gray-50">
+            <a href="{% url 'my_ads' %}" class="flex items-center gap-3 text-ria-red font-bold py-2">
+              <i class="fa-solid fa-receipt w-6"></i> Замовлення
+            </a>
+            <a href="{% url 'admin_users_list' %}" class="flex items-center gap-3 text-blue-600 font-bold py-2">
+              <i class="fa-solid fa-users w-6"></i> Користувачі
+            </a>
+          </div>
+        {% endif %}
         {% if user.is_authenticated %}
           <a href="{% url 'profile' %}" class="flex items-center gap-3 text-gray-700 font-medium py-2">
             <i class="fa-regular fa-user w-6"></i> Мій Профіль

@@ -41,14 +41,27 @@
                 <a href="{% url 'my_ads' %}"
                    class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'my_ads' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
                   <i class="fa-solid fa-car-side"></i>
-                  Мої оголошення
+                  {% if is_admin %}
+                    Керування замовленнями
+                  {% else %}
+                    Мої оголошення
+                  {% endif %}
                 </a>
               </li>
-              <li>
-                <a href="{% url 'purchase_history' %}"
-                   class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'purchase_history' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
-                  <i class="fa-solid fa-receipt"></i>
-                  Історія покупок
+              {% if is_admin == False %}
+                <li>
+                  <a href="{% url 'purchase_history' %}"
+                     class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'purchase_history' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
+                    <i class="fa-solid fa-receipt"></i>
+                    Історія покупок
+                  </a>
+                </li>
+                <li>
+                {% endif %}
+                <a href="#"
+                   class="flex items-center gap-3 px-6 py-4 text-gray-700 hover:bg-gray-50 transition">
+                  <i class="fa-solid fa-bell"></i>
+                  Сповіщення
                 </a>
               </li>
               <li>
@@ -56,6 +69,13 @@
                    class="flex items-center gap-3 px-6 py-4 {% if request.resolver_match.url_name == 'wishlist' %}bg-blue-50 text-blue-700 font-bold border-l-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50 transition{% endif %}">
                   <i class="fa-solid fa-heart text-ria-red"></i>
                   Обране
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                   class="flex items-center gap-3 px-6 py-4 text-gray-700 hover:bg-gray-50 transition">
+                  <i class="fa-solid fa-comment-dots"></i>
+                  Повідомлення
                 </a>
               </li>
             </ul>

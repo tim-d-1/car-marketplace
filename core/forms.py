@@ -19,6 +19,30 @@ class UserProfileForm(forms.ModelForm):
         }
 
 
+class AdminUserEditForm(forms.ModelForm):
+    phone = forms.CharField(max_length=20, label="Номер телефону", required=False)
+    wallet_address = forms.CharField(max_length=42, label="MetaMask Гаманець", required=False)
+    new_password = forms.CharField(widget=forms.PasswordInput, required=False, label="Новий пароль")
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email", "is_active", "is_staff"]
+        labels = {
+            "first_name": "Ім'я",
+            "last_name": "Прізвище",
+            "email": "Електронна пошта",
+            "is_active": "Активний (може логінитись)",
+            "is_staff": "Адміністратор (is_staff)",
+        }
+
+    def __init__(self, *args, **kwargs):
+        is_superuser = kwargs.pop('is_superuser', False)
+        super().__init__(*args, **kwargs)
+        if not is_superuser:
+            self.fields['is_staff'].disabled = True
+            self.fields['is_staff'].help_text = "Тільки суперадмін може змінювати цей прапорець."
+
+
 class UserRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, label="Ім'я")
     last_name = forms.CharField(

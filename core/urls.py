@@ -22,4 +22,6 @@ urlpatterns = [
     path("add/", views.add_auto, name="add_auto"),
     path("car/<int:car_id>/edit/", views.edit_auto, name="edit_auto"),
     path("car/<int:car_id>/delete/", views.delete_auto, name="delete_auto"),
+    path("admin-panel/users/", views.admin_users_list, name="admin_users_list"),
+    path("admin-panel/users/<int:user_id>/", views.admin_user_detail, name="admin_user_detail"),
 ]

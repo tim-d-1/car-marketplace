@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.cache import cache
 from .supabase_client import upload_image, supabase
 
-from core.forms import CarForm, UserProfileForm, UserRegistrationForm
+from core.forms import CarForm, UserProfileForm, UserRegistrationForm, AdminUserEditForm
 from .models import (
     Car,
     Profile,
@@ -57,7 +57,7 @@ def profile_view(request):
         }
         form = UserProfileForm(instance=request.user, initial=initial_data)
 
-    return render(request, "core/profile.html", {"form": form})
+        return render(request, "core/profile.html", {"form": form, "is_admin": True if request.user.is_staff else False })
 
 
 def auth_callback_view(request):
@@ -245,8 +245,12 @@ def add_auto(request):
 
 @login_required
 def edit_auto(request, car_id):
-    car = get_object_or_404(Car, id=car_id, owner=request.user)
-    if car.status in ["pending", "sold"]:
+    if request.user.is_staff:
+        car = get_object_or_404(Car, id=car_id)
+    else:
+        car = get_object_or_404(Car, id=car_id, owner=request.user)
+
+    if car.status in ["pending", "sold"] and not request.user.is_staff:
         messages.error(
             request,
             "Ви не можете редагувати оголошення, яке знаходиться в процесі продажу або вже продано.",
@@ -288,8 +292,12 @@ def edit_auto(request, car_id):
 
 @login_required
 def delete_auto(request, car_id):
-    car = get_object_or_404(Car, id=car_id, owner=request.user)
-    if car.status in ["pending", "sold"]:
+    if request.user.is_staff:
+        car = get_object_or_404(Car, id=car_id)
+    else:
+        car = get_object_or_404(Car, id=car_id, owner=request.user)
+
+    if car.status in ["pending", "sold"] and not request.user.is_staff:
         messages.error(
             request,
             "Ви не можете видалити оголошення, яке знаходиться в процесі продажу або вже продано.",
@@ -298,12 +306,46 @@ def delete_auto(request, car_id):
     if request.method == "POST":
         car.delete()
         messages.success(request, "Оголошення успішно видалено!")
-        return redirect("my_ads")
-    return redirect("my_ads")
+        return redirect(request.META.get("HTTP_REFERER", "home"))
+    return redirect(request.META.get("HTTP_REFERER", "home"))
 
 
 @login_required
 def my_ads(request):
+    if request.user.is_staff:
+        query = request.GET.get("q", "")
+        sort = request.GET.get("sort", "-created_at")
+
+        purchases = Purchase.objects.all().select_related(
+            "car", "car__brand", "car__model", "buyer", "seller", "buyer__profile"
+        )
+
+        if query:
+            from django.db.models import Q
+
+            purchases = purchases.filter(
+                Q(buyer__username__icontains=query)
+                | Q(buyer__email__icontains=query)
+                | Q(buyer__profile__phone__icontains=query)
+                | Q(deal_id__icontains=query)
+                | Q(transaction_hash__icontains=query)
+            )
+
+        if sort == "price_asc":
+            purchases = purchases.order_by("car__price")
+        elif sort == "price_desc":
+            purchases = purchases.order_by("-car__price")
+        elif sort == "created_at":
+            purchases = purchases.order_by("created_at")
+        else:
+            purchases = purchases.order_by("-created_at")
+
+        return render(
+            request,
+            "core/my_ads.html",
+            {"purchases": purchases, "is_admin": True, "query": query, "sort": sort},
+        )
+
     tab = request.GET.get("tab", "active")
     cars = Car.objects.filter(owner=request.user).select_related(
         "brand", "model", "region"
@@ -327,7 +369,11 @@ def my_ads(request):
 
 @login_required
 def toggle_car_status(request, car_id):
-    car = get_object_or_404(Car, id=car_id, owner=request.user)
+    if request.user.is_staff:
+        car = get_object_or_404(Car, id=car_id)
+    else:
+        car = get_object_or_404(Car, id=car_id, owner=request.user)
+
     if car.status == "active":
         car.status = "inactive"
         messages.success(request, "Оголошення деактивовано.")
@@ -337,11 +383,15 @@ def toggle_car_status(request, car_id):
     else:
         messages.error(request, "Неможливо змінити статус оголошення в даному стані.")
     car.save()
-    return redirect("my_ads")
+    return redirect(request.META.get("HTTP_REFERER", "home"))
 
 
 @login_required
 def checkout_view(request, car_id):
+    if request.user.is_staff:
+        messages.error(request, "Адміністратори не можуть купувати авто.")
+        return redirect("car_detail", car_id=car_id)
+
     car = get_object_or_404(Car, id=car_id)
     if car.status != "active":
         messages.error(request, "Це авто зараз недоступне для купівлі.")
@@ -423,7 +473,6 @@ def confirm_delivery_api(request):
 @csrf_exempt
 @login_required
 def cancel_order_api(request):
-    """API for cancelling order from both sides"""
     if request.method == "POST":
         data = json.loads(request.body)
         purchase_id = data.get("purchase_id")
@@ -448,6 +497,10 @@ def cancel_order_api(request):
 
 @login_required
 def purchase_history(request):
+    if request.user.is_staff:
+        messages.error(request, "У вас немає доступу до цієї сторінки.")
+        return redirect("home")
+
     purchases = request.user.purchases.all().select_related(
         "car", "car__brand", "car__model", "seller"
     )
@@ -528,3 +581,92 @@ def toggle_wishlist(request, car_id):
             return JsonResponse({"status": "removed"})
         return JsonResponse({"status": "added"})
     return JsonResponse({"status": "error"}, status=400)
+
+
+@login_required
+def admin_users_list(request):
+    if not request.user.is_staff:
+        messages.error(request, "У вас немає доступу до цієї сторінки.")
+        return redirect("home")
+
+    query = request.GET.get("q", "")
+    users = User.objects.all().select_related("profile").order_by("-date_joined")
+
+    if query:
+        from django.db.models import Q
+
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(profile__phone__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+        )
+
+    return render(
+        request, "core/admin_users_list.html", {"users": users, "query": query}
+    )
+
+
+@login_required
+def admin_user_detail(request, user_id):
+    if not request.user.is_staff:
+        messages.error(request, "У вас немає доступу до цієї сторінки.")
+        return redirect("home")
+
+    managed_user = get_object_or_404(User, id=user_id)
+
+    if request.method == "POST":
+        form = AdminUserEditForm(
+            request.POST,
+            request.FILES,
+            instance=managed_user,
+            is_superuser=request.user.is_superuser,
+        )
+        if form.is_valid():
+            user = form.save(commit=False)
+
+            new_pwd = form.cleaned_data.get("new_password")
+            if new_pwd:
+                user.set_password(new_pwd)
+
+            user.save()
+
+            profile = user.profile
+            profile.phone = form.cleaned_data.get("phone")
+            profile.wallet_address = form.cleaned_data.get("wallet_address")
+
+            avatar_url = handle_image_upload(
+                request, field_name="avatar", bucket="avatars", folder=f"user_{user.id}"
+            )
+            if avatar_url:
+                profile.avatar = avatar_url
+
+            profile.save()
+
+            messages.success(request, f"Профіль користувача {user.username} оновлено!")
+            return redirect("admin_user_detail", user_id=user.id)
+    else:
+        initial = {
+            "phone": managed_user.profile.phone,
+            "wallet_address": managed_user.profile.wallet_address,
+        }
+        form = AdminUserEditForm(
+            instance=managed_user,
+            initial=initial,
+            is_superuser=request.user.is_superuser,
+        )
+
+    purchases = managed_user.purchases.all().select_related("car", "seller")
+    sales = managed_user.sales.all().select_related("car", "buyer")
+
+    return render(
+        request,
+        "core/admin_user_detail.html",
+        {
+            "managed_user": managed_user,
+            "form": form,
+            "purchases": purchases,
+            "sales": sales,
+        },
+    )
